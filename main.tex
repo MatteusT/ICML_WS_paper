@@ -62,11 +62,11 @@ In quantum mechanics, Hartree-Fock is an important method for approximating the 
 
 
 % Self consistent methods
-Self consistent methods have emerged in various different fields of science and mathematics. These methods gives means to iteratively reach a fixed value by making the result a function of itself. These methods are usually fixed point iteration methods which is described as given in the equation below.
+Self consistent methods have emerged in various different fields of science and mathematics. These methods gives means to iteratively reach a fixed value by making the result a function of itself. Fixed point iteration methods is described as given in the equation below.
 \[
 x_{n+1} = f(x_n),  n = 0,1,2,3...
 \] 
-The fixed point algorithm will iterate until reaching a steady state at which point each iteration will be self-consistent[ref] and $f(x)=x$.  
+The fixed point algorithm will iterate until reaching a steady state at which point each iteration will be self-consistent and $f(x)=x$.  
 
 %HF intro
 In the field of computational chemistry, Hartree-Fock (HF) is a self consistent method used to approximate the electron distribution and the energy of the system. 
@@ -482,6 +482,13 @@ After training, for each Hartree-Fock iteration, we will get a best set of coeff
 % 
 Putting these $n$ sets of coefficients $\hat{c}_{(1,1)}, \hat{c}_{(2,2)}, \ldots  \hat{c}_{(i-1,j-1)}$ in sequence will form the final policy that imitate the demonstration which is built from  the original Hartree-Fock but may get steady-state density matrix with only half of iterations. 
 
+To prevent the sum of the coefficients to vary too much from 1 a regularization method is implemented which penalizes the model when the sum differs form one. The regularization model included in the optimization is as following:
+\[
+R =  w [(\sum_i c_i) - 1]
+\]
+where $w$ is the weight deciding the magnitude of the penalty which was set to 30.
+
+
 %In this new process, the output of previous policy would become the input of next policy just like a pipeline. 
 \section{EXPERIMENTS}
 
@@ -498,17 +505,23 @@ As a result, given a molecule, we can train a policy under a set of instances, a
  
 \subsection{Experiment Dataset}
 
-The chemical data consists of the electronic structure of a set of various unique molecules, each with several distorted geometries. The bond lengths and bond angles were distorted with a random uniform distribution of +-0.2 \AA\ and +-10\textsuperscript{o}. The geometries have a free rotation on the along the first carbon-carbon bond. The dataset was generated using rejection sampling, meaning that once the geometry is distorted it only is accepted given the condition that the distortion of all the bond lengths and angles are within the given range and that there are no contact closer than 3 \AA\ between non-bonded atoms. All the geometries are placed in different fixed electric field environments in X, Y and Z direction. 
+The chemical data consists of the electronic structure of a set of various unique molecules, each with several distorted geometries. The bond lengths and bond angles were distorted with a random uniform distribution of $\pm$0.2 \AA\ and $\pm$10\textsuperscript{o}. The geometries have a free rotation along the first carbon-carbon bond for the linear molecules and no dihedral rotation on the cyclic molecules. The dataset was generated using rejection sampling, meaning that once the geometry is distorted it only is accepted given the condition that the distortion of all the bond lengths and angles are within the given range and that there are no contact closer than 3 \AA\ between non-bonded atoms. All the geometries are additionally placed in different fixed electric field environments in X, Y and Z direction. 
 
-The dataset is composed of different derivations of pentylene, as shown in figure \ref{fig:molecule}. The molecule is singly substituted with flourine (-F), hydroxyl (-OH) or amine (-NH2) group. Hence the dataset has a set off geometries where each carbon is substituted with each of the 3 subsituents leading to a total of 16 unique molecules including the molecule without any subsituents.  
+The training dataset is composed of different derivations of pentylene, as shown in figure~\ref{fig:molecule}. The molecule is singly substituted with flourine (-F), hydroxyl (-OH) or amine (-NH2) group. Hence the dataset has a set off geometries where each carbon is substituted with each of the 3 subsituents leading to a total of 16 unique molecules including the molecule without any subsituents. This data set has 105 geometry configurations, and each configuration will be put under 4 different environments (1 with no environment + 3 different fields for X, Y and Z).  We split the whole dataset into two parts evenly. We use the first 53 geometries to serve as the training dataset, and the remaining 52 geometries as testing dataset.
 
 \begin{figure}[h!]
-  \caption{The chemical structure of Pentylene, here R = H, F, OH or NH2}
+  \caption{The chemical structure of substituted Pentylene, here R = H, F, OH or NH2}
     \label{fig:molecule}
     \centerline{\includegraphics[width=80px]{pent3ene.pdf}}
 \end{figure}
 
+The test dataset consists of substituted cyclopentene  with the same functional groups as the train dataset (see figure~\ref{fig:testMolecule}). This data set has 40 geometry configurations, and each configuration will be put under 4 different environments.
 
+\begin{figure}[h!]
+  \caption{The chemical structure of substituted cycloPentene, here R = H, F, OH or NH2}
+    \label{fig:testMolecule}
+    \centerline{\includegraphics[width=60px]{RcycloPenteneHs.pdf}}
+\end{figure}
 %Environment
 %Two different models of electric field environments are applied, one with a grid of point charges and one with a fixed electric fields in X, Y and Z direction. The point charge model is similar to the ChelpG model \cite{ChelpG} where random point charges are placed around the molecule at a certain distance. In this dataset, we set the number of point charges to 100.
  
@@ -522,7 +535,6 @@ The dataset is composed of different derivations of pentylene, as shown in figur
 Our goal is to train a modified Hartree-Fock procedure that accurately predicts the density matrix and the energy expectation values. Therefore, for each pair of molecular configuration with an environment, we generated expectation values of each operator that appears in the Hamiltonian (total kinetic energy, interaction of the electron density with each nucleus, and total two-electron repulsion energy) to serve as the ground truth. 
 
 % DATA SET
-The model was trained on the dataset which has different electric fields as environment. This data set has 20 geometry configurations, and each configuration will be put under 4 different environments (1 with no environment + 3 different fields for X, Y and Z).  We split the whole dataset into two parts evenly. We use the first 10 geometries to serve as the training dataset, and the remaining 10 geometries as testing dataset.
 
 We ran the original Hartree-Fock until convergence, so we have the ground truth of the steady-state density matrices and the energy of the given molecular system under different geometries. 
 %Since we have the energy of each configuration in the dataset, we can to evaluate the computation time and also the accuracy of the result in each iteration.
