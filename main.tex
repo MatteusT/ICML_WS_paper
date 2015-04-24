@@ -17,6 +17,7 @@
 \usepackage{mathtools}
 \usepackage{fancyref}
 \usepackage{graphicx}
+\usepackage{subcaption}
 % Definitions of handy macros can go here
 
 \newcommand{\dataset}{{\cal D}}
@@ -28,7 +29,7 @@
 
 % Short headings should be running head and authors last names
 
-\ShortHeadings{Imitation Learning for Accelerating Self-Consistent Methods}{Meil\u{a} and Jordan}
+\ShortHeadings{Imitation Learning for Accelerating Self-Consistent Methods}{Name and Name}
 \firstpageno{1}
 
 \begin{document}
@@ -62,7 +63,7 @@ In quantum mechanics, Hartree-Fock is an important method for approximating the 
 
 
 % Self consistent methods
-Self consistent methods have emerged in various different fields of science and mathematics. These methods gives means to iteratively reach a fixed value by making the result a function of itself. Fixed point iteration methods is described as given in the equation below.
+Self consistent methods have emerged in various different fields of science and mathematics. These methods gives means to iteratively reach a fixed value by making the result a function of itself. Fixed point iteration methods are described as given in the equation below.
 \[
 x_{n+1} = f(x_n),  n = 0,1,2,3...
 \] 
@@ -482,11 +483,11 @@ After training, for each Hartree-Fock iteration, we will get a best set of coeff
 % 
 Putting these $n$ sets of coefficients $\hat{c}_{(1,1)}, \hat{c}_{(2,2)}, \ldots  \hat{c}_{(i-1,j-1)}$ in sequence will form the final policy that imitate the demonstration which is built from  the original Hartree-Fock but may get steady-state density matrix with only half of iterations. 
 
-To prevent the sum of the coefficients to vary too much from 1 a regularization method is implemented which penalizes the model when the sum differs form one. The regularization model included in the optimization is as following:
+Consequently to prevent the sum of the coefficients to vary too much from 1 a regularization method is implemented which penalizes the model when the sum differs form one. The regularization model included in the optimization is as following:
 \[
 R =  w [(\sum_i c_i) - 1]
 \]
-where $w$ is the weight deciding the magnitude of the penalty which was set to 30.
+where $w$ is the weight deciding the magnitude of the penalty which was set to 30. This regularization method is added to the minimization of the experts as well as to the DAgger.
 
 
 %In this new process, the output of previous policy would become the input of next policy just like a pipeline. 
@@ -499,7 +500,7 @@ In energy minimization, we are interested in discovering a geometry with a parti
  
 %ASSUMPTION:
 %Assu Coefficient (linear combination) may be similar for the same molecule \\
-Although the same molecule under different geometries and different environments will have different equilibrium structures, we assume the policy that speeds up Hartree-Fock for a certain molecule will be very similar under different settings. 
+Although the same molecule under different geometries and different environments will have different equilibrium structures, we assume the policy that accelerates Hartree-Fock for a certain molecule will be very similar under different settings. We also want to explore as of how well a certain linear combination of coeffcients will accelerate Hartree-Fock for similar molecules.  
 
 As a result, given a molecule, we can train a policy under a set of instances, and after training we can apply the learned policy on the other set of instances to evaluate the performance. 
  
@@ -549,22 +550,23 @@ Our goal is to find a policy which quickly produces a density matrix with low sq
 \subsection{Approach}
 
 
-In the experiment, we will compare three different policies with baseline.
+In the experiment, we will compare two different policies with baseline.
 %MENTION THE PURE LINEAR COMBINATION
 %In the experiment, we built up two expert's policies.
 One naive approach to build the first good policy is always using all the density matrices we have to generate a linear combination that best approaches the final steady-state density matrix after one Hartree-Fock iteration.  For example, from guess density matrix $\rho_0$ we will find the best coefficient that makes the output best approaches the final objective. However, we may get some error thus the result of the first iteration is $\rho_1$.  In the next iteration, again we will try to find the linear combination $(\rho_0, \rho_1)$ that best approaches the final density matrix. We can keep doing this procedure until the output of the Hartree-Fock reaches the final steady-state density matrix.
-Because we already know the final steady-state density matrix, and in each iteration we aim for the final objective directly, it's possible that we can build up a trajectory that reaches final density matrix much faster then the original process. At the same time, we will learn a policy from it. Let's call it the ``Pure Linear Combination'' policy.
+Because we already know the final steady-state density matrix, and in each iteration we aim for the final objective directly, it's possible that we can build up a trajectory that reaches final density matrix much faster then the original process. At the same time, we will learn a policy from it. Let's call it the ``least squares'' policy.
 
 %SHOULD ALSO MENTIONED TWO DIFFERENT EXPERT \\
-Though we already aim for the final objective in each iteration, we still can try to build up a better expert's demonstration from it and perhaps train another policy which is faster than the pure linear combination one.
+Though we already aim for the final objective in each iteration, we still can try to build up a better expert's demonstration from it and perhaps train another policy which is faster than the least squares one.
 
-In the experiment, we built up two different expert's policies. 
-One is from the trajectory that has a step size of two of the ``Pure Linear Combination'' trajectory. The other one is from the perfect trajectory which always return the final steady-state matrix in one iteration.
+In the experiment, we built up two different cases of expert's policies. Both are from the trajectory that has a step size of two of the ``least squares'' trajectory. What differs is the initial guess density, one expert policy is the least squares fitting of the process with the initial guess set to zero ($\rho_0 = 0$) and the other expert policy has the initial guess density matrix set to an identity matrix ($\rho_0 = I$). Both these experts are aggregated and trained simultaneously in the training of the DAgger model. 
+
+%The other one is from the perfect trajectory which always return the final steady-state matrix in one iteration.
 
 % HOW TO EVALUATE
 
 %MENTION THE CASE THAT MAY NEVER CONVERGE \\
-When iteration of Hartree-Fock converge, we can get the final steady-state density matrix and also the energy of the system. However, the process does not always lead to convergence. For example, under some strong electric fields, the process may keep running and never reach convergence.
+%When iteration of Hartree-Fock converge, we can get the final steady-state density matrix and also the energy of the system. However, the process does not always lead to convergence. For example, under some strong electric fields, the process may keep running and never reach convergence.%
 
 %In the experiment, we will also examine the robustness of different policies by the smoothness of the plot.
 
@@ -583,19 +585,42 @@ When iteration of Hartree-Fock converge, we can get the final steady-state densi
 We evaluated the performance of each policy in terms of error and robustness. We will find that least square already converges pretty fast and get much lower error in the same amount of iterations compare to the baseline, since it always tries to reaches final density matrix in each iteration. However, considering DAgger trains on the dataset that aggregates new dataset iteration by iteration. As the dataset growing, it adds more diversity to the dataset and lead to a more robust policy which performs better.
 
 
-\begin{figure}[h!]
-\center
-  \caption{Error on testing dataset with initial $\rho_0$ = 0}
-	\label{fig:testZero}
-    \includegraphics{testcombpent3eneNOF.pdf}
-\end{figure}
+%\begin{figure}[h!]
+%\center
+%  \caption{Error on testing dataset with initial $\rho_0$ = 0}
+%	\label{fig:testZero}
+%    \includegraphics{testcombpent3eneNOF.pdf}
+%\end{figure}
+%
+%\begin{figure}[h!]
+%\center
+%  \caption{Error on testing dataset with initial $\rho_0$ = I}
+%  \label{fig:testEye}
+%    \includegraphics{eyeTest_testset6iter_noytick.pdf}
+%\end{figure}
+
+
+
 
 \begin{figure}[h!]
-\center
-  \caption{Error on testing dataset with initial $\rho_0$ = I}
-  \label{fig:testEye}
-    \includegraphics{eyeTest_testset6iter_noytick.pdf}
+\centering
+\begin{subfigure}{.5\textwidth}
+  \centering
+  \includegraphics[width=1\linewidth]{DAggerZeroTrain.pdf}
+  \caption{A subfigure zero}
+  \label{fig:sub1}
+\end{subfigure}%
+\begin{subfigure}{.5\textwidth}
+  \centering
+  \includegraphics[width=1\linewidth]{DAggerEyeTrain.pdf}
+  \caption{A subfigure eye}
+  \label{fig:sub2}
+\end{subfigure}
+\caption{A figure with two subfigures Train}
+\label{fig:test}
 \end{figure}
+
+
 
 %Figure \ref{fig:training} shows the error of each policy on training dataset for 12 iterations. The baseline is the policy that always uses the average of the last two density matrices to serve as the input to the next iteration.  We can observe that all the policies seems to  converge within 10 iterations except the baseline fluctuates. The pure linear combination got the lowest error since it always aim for the final objective. On the other hand, DAgger keep aggregating datasets thus has a more diverse training data. Both the DAgger with different experts have similar performance in the first 6 iterations, and fall behinds pure linear combination after iteration 7. 
 
@@ -606,32 +631,72 @@ We can observe that all the policies seems to converge within 10 iterations exce
 
 
 %The baseline again fluctuates while all the other policies still converges within 12 iteration. 
-Pure linear combination and DAgger got pretty similar error after 12 iterations.
+Least squares and DAgger got pretty similar error after 12 iterations.
 
 However, the performance of linear combination fluctuates during iteration 5 - 10 while both DAgger with different experts have a more steady decreasing trend across all 12 iterations. 
 
-Compare to the result on the training dataset (Figure \ref{fig:training}), the curves are similar for DAgger and baseline, but is pretty different for the pure linear combination. Pure linear combination performs the best and has a smooth result on training dataset while it fluctuates on testing dataset. It is possible because of the pure linear combination over-fit the training dataset. On the contrary, DAgger with the expert that has step size of 2 got more consistent results between training and testing dataset.
+\begin{figure}[h!]
+\centering
+\begin{subfigure}{.5\textwidth}
+  \centering
+  \includegraphics[width=1\linewidth]{cycloPen_pzero_test_12iter.pdf}
+  \caption{A subfigure zero}
+  \label{fig:sub1}
+\end{subfigure}%
+\begin{subfigure}{.5\textwidth}
+  \centering
+  \includegraphics[width=1\linewidth]{cycloPen_peye_test_12iter.pdf}
+  \caption{A subfigure eye}
+  \label{fig:sub2}
+\end{subfigure}
+\caption{A figure with two subfigures cycloPentene}
+\label{fig:test}
+\end{figure}
+
+Compare to the result on the training dataset (Figure \ref{fig:training}), the curves are similar for DAgger and baseline, but is pretty different for the least squares. Least squares performs the best and has a smooth result on training dataset while it fluctuates on testing dataset. It is possible because of the least squares over-fit the training dataset. On the contrary, DAgger with the expert that has step size of 2 got more consistent results between training and testing dataset.
 
 
 \begin{figure}[h!]
-\center
-  \caption{Absolute value of difference between iterations on training dataset}
-	\label{fig:converge_training}
-    \includegraphics[width=210px]{convergence_Training.png}
+\centering
+\begin{subfigure}{.5\textwidth}
+  \centering
+  \includegraphics[width=1\linewidth]{dE_cycloPen_pzero_test_12iter.pdf}
+  \caption{A subfigure Zero}
+  \label{fig:sub1}
+\end{subfigure}%
+\begin{subfigure}{.5\textwidth}
+  \centering
+  \includegraphics[width=1\linewidth]{dE_cycloPen_peye_test_12iter.pdf}
+  \caption{A subfigure Eye}
+  \label{fig:sub2}
+\end{subfigure}
+\caption{A figure with two subfigures dE CycloPentene}
+\label{fig:test}
 \end{figure}
 
-\begin{figure}[h!]
-\center
-  \caption{Absolute value of difference between iterations on testing dataset}
-  \label{fig:converge_testing}
-    \includegraphics[width=210px]{convergence_Testing.png}
-\end{figure}
+%\begin{figure}[h!]
+%\center
+%  \caption{Absolute value of difference between iterations on training dataset}
+%	\label{fig:converge_training}
+%    \includegraphics[width=210px]{convergence_Training.png}
+%\end{figure}
+%
+%\begin{figure}[h!]
+%\center
+%  \caption{Absolute value of difference between iterations on testing dataset}
+%  \label{fig:converge_testing}
+%    \includegraphics[width=210px]{convergence_Testing.png}
+%\end{figure}
 
 
 \section{CONCLUSION}
-In the experiment, we first proposed the pure linear combination policy. It is easy to train and already can yield much lower error comparing to the baseline. However, it tend to somewhat over-fit the training data and performance fluctuates on testing data accordingly. 
+In the experiment, we first proposed the least squares policy. It is easy to train and already can yield much lower error comparing to the baseline. However, it tend to somewhat over-fit the training data and performance fluctuates on testing data accordingly. 
 
-On the other hand, DAgger does train a more robust policy which has a smooth and steady decreasing trend, and also being consistent from training to testing dataset. However, DAgger does not help to gain lower error than the pure linear combination in this experiment. It is possible that because the pure linear combination and the DAgger have the same policy space, both using the linear combination to speed up the whole process, thus DAgger can't gain much benefit from it easily. However, during the training process in DAgger, it keeps aggregating the dataset hence has a more diverse training instances. This can prevent the policy from over-fitting the training dataset thus produces a more stable and smooth decreasing trend. This is a great property when dealing with large molecules or on the case which is hard to get to convergence.
+On the other hand, DAgger does train a more robust policy which has a smooth and steady decreasing trend, and also being consistent from training to testing dataset. 
+
+However, DAgger does not help to gain lower error than the least squares in this experiment. It is possible that because the least squares and the DAgger have the same policy space, both using the linear combination to speed up the whole process, thus DAgger can't gain much benefit from it easily. 
+
+However, during the training process in DAgger, it keeps aggregating the dataset hence has a more diverse training instances. This can prevent the policy from over-fitting the training dataset thus produces a more stable and smooth decreasing trend. This is a great property when dealing with large molecules or on the case which is hard to get to convergence.
 
 
 \end{document}
