@@ -17,7 +17,9 @@
 \usepackage{mathtools}
 \usepackage{fancyref}
 \usepackage{graphicx}
+%\usepackage{placeins}
 \usepackage{subcaption}
+\usepackage{fixltx2e}
 % Definitions of handy macros can go here
 
 \newcommand{\dataset}{{\cal D}}
@@ -25,37 +27,36 @@
 
 % Heading arguments are {volume}{year}{pages}{submitted}{published}{author-full-names}
 
-\jmlrheading{1}{2000}{1-48}{4/00}{10/00}{Marina Meil\u{a} and Michael I. Jordan}
+\jmlrheading{1}{2000}{1-48}{4/00}{10/00}{Name and Name}
 
 % Short headings should be running head and authors last names
 
-\ShortHeadings{Imitation Learning for Accelerating Self-Consistent Methods}{Name and Name}
+\ShortHeadings{Imitation Learning for Accelerating Fixed Point Iterative Processes }{Name and Name}
 \firstpageno{1}
 
 \begin{document}
 
-\title{Imitation Learning for Accelerating Self-Consistent Methods}
+\title{Imitation Learning for Accelerating Fixed Point Iterative Processes}
 %title{Speeding up Hartree-Fock by Imitation Learning}
 
-\author{\name Marina Meil\u{a} \email mmp@stat.washington.edu \\
-       \addr Department of Statistics\\
-       University of Washington\\
-       Seattle, WA 98195-4322, USA
+\author{\name Name\ Name \email email \\
+       \addr Department\\
+       University \\
+       City, State , USA
        \AND
-       \name Michael I.\ Jordan \email jordan@cs.berkeley.edu \\
-       \addr Division of Computer Science and Department of Statistics\\
-       University of California\\
-       Berkeley, CA 94720-1776, USA}
-
-\editor{Leslie Pack Kaelbling}
+       \name Name\ Name \email email \\
+       \addr Department\\
+       University \\
+       City, State , USA}
+\editor{editor name}
 
 \maketitle
 
 
 \begin{abstract}
-In quantum mechanics, Hartree-Fock is an important method for approximating the electron distribution and energy of a given molecular system. However, Hartree-Fock is excessively time-consuming or even infeasible when applied to large molecules. Besides, depending on input, it is not always guaranteed to converge to a solution. Speeding up Hartree-Fock and making it more robust would thus enable scientists to deal with more complicated molecules and study chemical reactions with larger systems. In the present work, we attempt to improve on Hartree-Fock by imitation learning: from the trajectory produced by the original Hartree-Fock, we extract an (expensive to evaluate) expert policy which converges to a solution quickly and reliably, and attempt to imitate this policy with a less-expensive policy class.  To solve the imitation learning problem, we apply the Dataset Aggregation algorithm (DAgger), which learns a policy that is guaranteed to perform well under its induced distribution of states. In the experiment, we show that after 
+A means to accelerate iterative processes by using imitation learning is provided. This work focuses on the application of quantum mechanics and solving Hartree-Fock, which isa method for approximating the electron distribution and energy of a given molecular system. Hartree-Fock is excessively time-consuming or even infeasible when applied to large molecules. Besides, depending on input, it is not always guaranteed to converge to a solution. Speeding up Hartree-Fock and making it more robust would thus enable scientists to deal with more complicated molecules and study chemical reactions with larger systems. In the present work, we attempt to improve on Hartree-Fock by imitation learning: from the trajectory produced by the original Hartree-Fock, we extract an (expensive to evaluate) expert policy which converges to a solution quickly and reliably, and attempt to imitate this policy with a less-expensive policy class.  To solve the imitation learning problem, we apply the Dataset Aggregation algorithm (DAgger), which learns a policy that is guaranteed to perform well under its induced distribution of states. In the experiment, we show that after 
 %applying one iteration of DAgger, we got a faster convergence. 
- multiple iterations of DAgger, the performance becomes smoother and less over-fit. 
+ multiple iterations of DAgger, the performance improves and becomes less over-fit. 
 \end{abstract}
 
 \section{INTRODUCTION}
@@ -63,14 +64,14 @@ In quantum mechanics, Hartree-Fock is an important method for approximating the 
 
 
 % Self consistent methods
-Self consistent methods have emerged in various different fields of science and mathematics. These methods gives means to iteratively reach a fixed value by making the result a function of itself. Fixed point iteration methods are described as given in the equation below.
+In various fields of science and statistics we find iterative processes that converge into self consistency. These methods gives means to iteratively reach a fixed value by making the result a function of itself. Fixed point iteration methods are described as given in the equation below.
 \[
-x_{n+1} = f(x_n),  n = 0,1,2,3...
+x_{n+1} = f(x_n), \quad n = 0,1,2,3...
 \] 
 The fixed point algorithm will iterate until reaching a steady state at which point each iteration will be self-consistent and $f(x)=x$.  
 
 %HF intro
-In the field of computational chemistry, Hartree-Fock (HF) is a self consistent method used to approximate the electron distribution and the energy of the system. 
+In the field of computational chemistry, Hartree-Fock is a method as described above. Hartree-Fock is used mainly in the field of chemistry and physics to approximate the electron distribution and the energy of the system. 
 
 Electron distribution is considered the cornerstone of quantum computation, since many important properties of the quantum system can be induced from it. For example, if we can calculate the electron distribution of a molecule under different geometries, we can solve an important issue in quantum chemistry: the energy minimization problem in which we want to discover the equilibrium geometry of a molecular system given by a position distribution of nuclei and electrons that gives the global minimal energy. 
 
@@ -82,39 +83,23 @@ Since Hartree-Fock is a numerical method and the most straightforward implementa
 
 Since more advanced computational schemes typically start with a Hartree-Fock solution, this leads to a bottleneck in quantum chemistry which may limit the accuracy of the results but also the size of the molecules we can deal with.
 
-%The most straightforward way to choose a basis (as a product of per-atom bases) results in a basis set that grows exponentially with the number of atoms.  We can try to choose a smaller basis if desired, but by doing so we risk missing important effects.  (E.g.,  we would often skip the interaction between two atoms that are very far apart, or replace it with a less-detailed one; but to prevent the basis from growing too large we may have to skip interactions too aggressively to maintain accuracy.) 
-
-
-
-%[=== No Embedded parameter now!!! ===] \\
-%Tanha et al \cite{Matteus}, proposed a method for finding the similarities in molecules, in which parameters are embedded into Hartree-Fock model. The model is partitioned into few parts, including  kinetic energy, electron-nuclear interaction and electron-electron interaction, where each of these components have different parameters to make the whole process converge faster and output the correct density matrix.
-
-%With these embedded parameters,  we have the extra flexibility to change the behaviour of the Hartree-Fock method. This extra flexibility allows us to let each of the Hartree-Fock iteration make more progress. In particular, we would like to make single iteration of Hartree-Fock with embedded parameters achieve as much progress as two or even more iterations of the original Hartree-Fock.
-%[+++ No Embedded parameter now!!! +++ ] \\
-
-
-
-Accelerating Hartree-Fock hence becomes a very popular research topic among quantum chemists. For instance, Pulay \cite{Pulay1980} proposed that using a linear combination of few density matrices generated from previous iterations of Hartree-Fock may lead to faster convergence with fewer iterations. Different methods to find the best linear combinations have been explored based on Pulay's model[refs]. However, how to generate the best linear combination that may lead to the fastest convergence remains an open question \cite{Konstantin2002}\cite{Thorsten2011}\cite{Alejandro2012}. This raises our interests in finding a promising linear combination which accelerates the process. In particular, with the extra flexibility given by the linear combination of previous density matrices, we would like to make a single iteration of Hartree-Fock achieve as much progress as two or even more iterations of the original Hartree-Fock.
+Accelerating Hartree-Fock hence becomes a very popular research topic among quantum chemists. For instance, Pulay \citep{Pulay1980} proposed that using a linear combination of few density matrices generated from previous iterations of Hartree-Fock may lead to faster convergence with fewer iterations. Different methods to find the best linear combinations have been explored based on Pulay's model.~\citep{ADIIS,compScuseria} However, how to generate the best linear combination that may lead to the fastest convergence remains an open question \citep{Konstantin2002, Thorsten2011, Alejandro2012}. This raises our interests in finding a promising linear combination which accelerates the process. In particular, with the extra flexibility given by the linear combination of previous density matrices, we would like to make a single iteration of Hartree-Fock achieve as much progress as two or even more iterations of the original Hartree-Fock.
 
 % How to do that? (Imitation learning)
 This idea can be realized through imitation learning, a paradigm also called learning from demonstration that is designed to learn a policy from imitating an expert's demonstrations so as to become capable of performing the same tasks. 
 
 To achieve this goal, we can generate an illustrative trajectory from the base Hartree-Fock trajectory as the expert's demonstrations. Then, we can apply supervised learning to train a policy that mimics the demonstration. 
 
-%[ No Embedded parameter] 
-%By imitation learning technique, we can make Hartree-Fock with embedded parameters learns from the demonstrations,  which finally enables it to gain more progress in one single iteration.
-
-
 % Problem encountered   %%%%%
-However, naive supervised learning may yield poor performance in practice and also in theory.  Since the learner's prediction and action affect future observations and states during the execution of the learned policy, it obviously violates the common i.i.d. assumption made in most statistical learning approaches \cite{Ross}.
+However, naive supervised learning may yield poor performance in practice and also in theory.  Since the learner's prediction and action affect future observations and states during the execution of the learned policy, it obviously violates the common i.i.d. assumption made in most statistical learning approaches \citep{Ross}.
 
 
 
 % The recipe (DAgger)
-Fortunately, the dataset aggregation algorithm (DAgger), proposed by Ross et al. \cite{DAgger}, can learn a stationary deterministic policy guaranteed to perform well under its induced distribution of states. This in turn serves as a remedy to the poor performance in naive supervised learning. Besides, DAgger also has been proven to have stable performance and fast learning rate \cite{DAggerCompare}.
+Fortunately, the dataset aggregation algorithm (DAgger), proposed by Ross et al. \citep{DAgger}, can learn a stationary deterministic policy guaranteed to perform well under its induced distribution of states. This in turn serves as a remedy to the poor performance in naive supervised learning. Besides, DAgger also has been proven to have stable performance and fast learning rate \citep{DAggerCompare}.
 
 Based on these results, we introduce the idea of using imitation learning to speed up the Hartree-Fock process in the present study. By extracting an illustrative trajectory from original Hartree-Fock process
-through dataset aggregation algorithm (DAgger) \cite{DAgger}, we can train a set of linear combinations that can perform well under the induced distribution of states and yield more progress in each iteration as well. 
+through dataset aggregation algorithm (DAgger) \citep{DAgger}, we can train a set of linear combinations that can perform well under the induced distribution of states and yield more progress in each iteration as well. 
 
 %introducing “parameter" into HF  turn it to Machine learning problem.
 
@@ -262,7 +247,6 @@ We will keep doing this procedure until the difference of the energy given by th
 % single electron density matrix is the input and output 
 
 \begin{algorithm}[htb]
- \label{alg:hf}
  \KwData{ 3D coordinates of atomic nucleus}
  \KwResult{Density matrix which gives minimum energy}
 	Set up the size of the basis set \\
@@ -276,6 +260,7 @@ We will keep doing this procedure until the difference of the energy given by th
 	$i \leftarrow i+1$ \\
  }
  \caption{Hartree-Fock algorithm}
+\label{alg:hf}
 \end{algorithm}
 
 In large molecular system, the process is extremely time consuming and each iteration may take hours or even days of computation and thus become infeasible. 
@@ -286,7 +271,7 @@ As a result, a means to accelerate convergence of the Hartree-Fock process becom
 \subsection{Speeding up Hartree-Fock as an imitation learning problem}
 
 
-Accelerating Hartree-Fock convergence has previously been explored in the matter of creating a linear combination of the density matrices generated from previous iterations to serve as a better input to the next iteration of Hartree-Fock \cite{Pulay1980}. 
+Accelerating Hartree-Fock convergence has previously been explored in the matter of creating a linear combination of the density matrices generated from previous iterations to serve as a better input to the next iteration of Hartree-Fock \citep{Pulay1980}. 
 
 
 However, the issue of finding the best linear combination that may lead to the final density matrix faster still leaves room for further discussion.
@@ -367,7 +352,6 @@ Then in iteration $i$, we sample states according to a mixture of policies ($\ha
 
 
 \begin{algorithm}[htb]
- \label{alg:DAgger}
  \KwData{Expert's demonstration generated by expert's policy $\pi^*$}
  \KwResult{Best $\hat{\pi}_i$ on validation }
  $\pi^*$  is the expert’s policy \\
@@ -381,6 +365,7 @@ Then in iteration $i$, we sample states according to a mixture of policies ($\ha
 	Train classifier $\hat{\pi}_{i+1}$ on $D$\\
  }
  \caption{DAgger algorithms}
+ \label{alg:DAgger}
 \end{algorithm}
 
 % Connecting the symbol in algorithm to our scenario
@@ -483,12 +468,6 @@ After training, for each Hartree-Fock iteration, we will get a best set of coeff
 % 
 Putting these $n$ sets of coefficients $\hat{c}_{(1,1)}, \hat{c}_{(2,2)}, \ldots  \hat{c}_{(i-1,j-1)}$ in sequence will form the final policy that imitate the demonstration which is built from  the original Hartree-Fock but may get steady-state density matrix with only half of iterations. 
 
-Consequently to prevent the sum of the coefficients to vary too much from 1 a regularization method is implemented which penalizes the model when the sum differs form one. The regularization model included in the optimization is as following:
-\[
-R =  w [(\sum_i c_i) - 1]
-\]
-where $w$ is the weight deciding the magnitude of the penalty which was set to 30. This regularization method is added to the minimization of the experts as well as to the DAgger.
-
 
 %In this new process, the output of previous policy would become the input of next policy just like a pipeline. 
 \section{EXPERIMENTS}
@@ -506,34 +485,40 @@ As a result, given a molecule, we can train a policy under a set of instances, a
  
 \subsection{Experiment Dataset}
 
-The chemical data consists of the electronic structure of a set of various unique molecules, each with several distorted geometries. The bond lengths and bond angles were distorted with a random uniform distribution of $\pm$0.2 \AA\ and $\pm$10\textsuperscript{o}. The geometries have a free rotation along the first carbon-carbon bond for the linear molecules and no dihedral rotation on the cyclic molecules. The dataset was generated using rejection sampling, meaning that once the geometry is distorted it only is accepted given the condition that the distortion of all the bond lengths and angles are within the given range and that there are no contact closer than 3 \AA\ between non-bonded atoms. All the geometries are additionally placed in different fixed electric field environments in X, Y and Z direction. 
-
-The training dataset is composed of different derivations of pentylene, as shown in figure~\ref{fig:molecule}. The molecule is singly substituted with flourine (-F), hydroxyl (-OH) or amine (-NH2) group. Hence the dataset has a set off geometries where each carbon is substituted with each of the 3 subsituents leading to a total of 16 unique molecules including the molecule without any subsituents. This data set has 105 geometry configurations, and each configuration will be put under 4 different environments (1 with no environment + 3 different fields for X, Y and Z).  We split the whole dataset into two parts evenly. We use the first 53 geometries to serve as the training dataset, and the remaining 52 geometries as testing dataset.
+The chemical data consists of the electronic structure of a set of various unique molecules, each with several distorted geometries. The bond lengths and bond angles were distorted with a random uniform distribution of $\pm$0.5 \AA\ and $\pm$10\textsuperscript{o}. The geometries have a free rotation along the first carbon-carbon bond for the linear molecules and no dihedral rotation on the cyclic molecules. The dataset was generated using rejection sampling, meaning that once the geometry is distorted it only is accepted given the condition that the distortion of all the bond lengths and angles are within the given range and that there are no contact closer than 3 \AA\ between non-bonded atoms.
 
 \begin{figure}[h!]
-  \caption{The chemical structure of substituted Pentylene, here R = H, F, OH or NH2}
-    \label{fig:molecule}
-    \centerline{\includegraphics[width=80px]{pent3ene.pdf}}
+\centering
+\begin{subfigure}{.3\textwidth}
+  \centering
+  \includegraphics[width=80px]{pent3ene.pdf}
+  \caption{Pent-3-ene}
+  \label{fig:pent3ene}
+\end{subfigure}%
+\begin{subfigure}{.3\textwidth}
+  \centering
+  \includegraphics[width=60px]{RcycloPenteneHs.pdf}
+  \caption{Cyclo-Pentene}
+  \label{fig:cycloPen}
+\end{subfigure}
+\begin{subfigure}{.3\textwidth}
+  \centering
+  \includegraphics[width=80px]{pent3ene2propNOF.pdf}
+  \caption{Pent-3-ene-2-propyl-1-F}
+  \label{fig:propSub}
+\end{subfigure}
+\caption{The chemical structure of molecules in the datasets, R = H, F, OH or NH\textsubscript{2}}
+\label{fig:Molecules}
 \end{figure}
 
-The test dataset consists of substituted cyclopentene  with the same functional groups as the train dataset (see figure~\ref{fig:testMolecule}). This data set has 40 geometry configurations, and each configuration will be put under 4 different environments.
 
-\begin{figure}[h!]
-  \caption{The chemical structure of substituted cycloPentene, here R = H, F, OH or NH2}
-    \label{fig:testMolecule}
-    \centerline{\includegraphics[width=60px]{RcycloPenteneHs.pdf}}
-\end{figure}
-%Environment
-%Two different models of electric field environments are applied, one with a grid of point charges and one with a fixed electric fields in X, Y and Z direction. The point charge model is similar to the ChelpG model \cite{ChelpG} where random point charges are placed around the molecule at a certain distance. In this dataset, we set the number of point charges to 100.
- 
+The following data sets were generated. The first dataset was used for training. The last two datasets were used for testing the robustness. Each configuration in all the datasets will be put under 4 different environments (1 with no environment + 3 different fields for X, Y and Z direction).
+\begin{description}
+\item[\textit{pent3ene}] This dataset is composed of different derivations of pent-3-ene, as shown in figure~\ref{fig:pent3ene}. The molecule is singly substituted with flourine (-F), hydroxyl (-OH) or amine (-NH\textsubscript{2}) group. Hence the dataset has a set off geometries where each carbon is substituted with each of the 3 subsituents leading to a total of 16 unique molecules including the molecule without any subsituents. This data set has 105 geometry configurations and we split the whole dataset into two parts evenly. We use the first 53 geometries to serve as the training dataset, and the remaining 52 geometries as testing dataset.
+\item[\textit{cycloPentene}]Includes singly substituted cyclo-pentene (see figure~\ref{fig:cycloPen}). This data set has 40 geometry configurations.
+\item[\textit{pentPropylF}] Includes pent-3-ene-2-propyl-1-Fluorine singly substituted with -F, -OH and -NH\textsubscript{2} (see figure~\ref{fig:propSub}). This data set has 21 geometry configurations.
+\end{description}
 
-%This includes perturbations from external electrostatic potentials, due to other portions of the molecule or from solvent, and inductive effects from acceptors and donors. 
-
-
-% Point charges
-%The magnitudes of the point charges are randomly generated using a uniform distribution between -25 and 25 amu, chosen to induce variations in the Mulliken charges on the C and H in methane and ethane that are similar to the charges induced on the methyl group in CF3CH3 (~0.2 amu).  
-
-Our goal is to train a modified Hartree-Fock procedure that accurately predicts the density matrix and the energy expectation values. Therefore, for each pair of molecular configuration with an environment, we generated expectation values of each operator that appears in the Hamiltonian (total kinetic energy, interaction of the electron density with each nucleus, and total two-electron repulsion energy) to serve as the ground truth. 
 
 % DATA SET
 
@@ -543,6 +528,12 @@ We ran the original Hartree-Fock until convergence, so we have the ground truth 
 % Define error
 Our goal is to find a policy which quickly produces a density matrix with low square error. The error is defined as error of matrix + error of energy. The error of the matrix is given by $\|\rho_i-\rho_n\|$. Likewise, the error of energy is given by $|E(\rho_i)-E(\rho_n)|$. Once we have the error function, we can optimize the coefficients by minimizing the square error.
 
+Consequently to prevent the sum of the coefficients to vary too much from 1 a regularization method is implemented which penalizes the model when the sum differs form one. The regularization model included in the optimization is as following:
+\[
+R =  w [(\sum_i c_i) - 1]
+\]
+where $w$ is the weight deciding the magnitude of the penalty which was set to 30. This regularization method is added to the minimization of the experts as well as to the DAgger.
+
 % Goal
 %The goal is to train the Hartree-Fock with linear combination policy that can reach the steady-state density matrix for a given molecule faster than the original Hartree-Fock.
 
@@ -550,7 +541,7 @@ Our goal is to find a policy which quickly produces a density matrix with low sq
 \subsection{Approach}
 
 
-In the experiment, we will compare two different policies with baseline.
+In the experiment, we will compare two different policies with baseline. The baseline is the policy that always uses the average of the last two density matrices to serve as the input to the next iteration.
 %MENTION THE PURE LINEAR COMBINATION
 %In the experiment, we built up two expert's policies.
 One naive approach to build the first good policy is always using all the density matrices we have to generate a linear combination that best approaches the final steady-state density matrix after one Hartree-Fock iteration.  For example, from guess density matrix $\rho_0$ we will find the best coefficient that makes the output best approaches the final objective. However, we may get some error thus the result of the first iteration is $\rho_1$.  In the next iteration, again we will try to find the linear combination $(\rho_0, \rho_1)$ that best approaches the final density matrix. We can keep doing this procedure until the output of the Hartree-Fock reaches the final steady-state density matrix.
@@ -559,7 +550,7 @@ Because we already know the final steady-state density matrix, and in each itera
 %SHOULD ALSO MENTIONED TWO DIFFERENT EXPERT \\
 Though we already aim for the final objective in each iteration, we still can try to build up a better expert's demonstration from it and perhaps train another policy which is faster than the least squares one.
 
-In the experiment, we built up two different cases of expert's policies. Both are from the trajectory that has a step size of two of the ``least squares'' trajectory. What differs is the initial guess density, one expert policy is the least squares fitting of the process with the initial guess set to zero ($\rho_0 = 0$) and the other expert policy has the initial guess density matrix set to an identity matrix ($\rho_0 = I$). Both these experts are aggregated and trained simultaneously in the training of the DAgger model. 
+In the experiment, we built up two different cases of expert's policies. Both are from the trajectory that has a step size of two of the ``least squares'' trajectory. What differs is the initial guess density, one expert policy is the least squares fitting of the process with the initial guess set to zero ($\rho_0 = 0$) and the other expert policy has the initial guess set to an identity matrix ($\rho_0 = I$). Both these experts are aggregated and trained simultaneously in the training of the DAgger model. 
 
 %The other one is from the perfect trajectory which always return the final steady-state matrix in one iteration.
 
@@ -582,97 +573,74 @@ In the experiment, we built up two different cases of expert's policies. Both ar
 
 \subsection{Experiment result}
 
-We evaluated the performance of each policy in terms of error and robustness. We will find that least square already converges pretty fast and get much lower error in the same amount of iterations compare to the baseline, since it always tries to reaches final density matrix in each iteration. However, considering DAgger trains on the dataset that aggregates new dataset iteration by iteration. As the dataset growing, it adds more diversity to the dataset and lead to a more robust policy which performs better.
-
-
-%\begin{figure}[h!]
-%\center
-%  \caption{Error on testing dataset with initial $\rho_0$ = 0}
-%	\label{fig:testZero}
-%    \includegraphics{testcombpent3eneNOF.pdf}
-%\end{figure}
-%
-%\begin{figure}[h!]
-%\center
-%  \caption{Error on testing dataset with initial $\rho_0$ = I}
-%  \label{fig:testEye}
-%    \includegraphics{eyeTest_testset6iter_noytick.pdf}
-%\end{figure}
-
-
 
 
 \begin{figure}[h!]
 \centering
 \begin{subfigure}{.5\textwidth}
   \centering
-  \includegraphics[width=1\linewidth]{DAggerZeroTrain.pdf}
-  \caption{A subfigure zero}
-  \label{fig:sub1}
+  \includegraphics[scale=0.7]{cycloPen_pzero_test_12iter.pdf}
+  \caption{$\rho_0 = 0$}
+  \label{fig:cycloPen0}
 \end{subfigure}%
 \begin{subfigure}{.5\textwidth}
   \centering
-  \includegraphics[width=1\linewidth]{DAggerEyeTrain.pdf}
-  \caption{A subfigure eye}
-  \label{fig:sub2}
+  \includegraphics[scale=0.7]{cycloPen_peye_test_12iter.pdf}
+  \caption{$\rho_0 = I$}
+  \label{fig:cycloPenI}
 \end{subfigure}
-\caption{A figure with two subfigures Train}
-\label{fig:test}
+\caption{Error as a function of iteration tested on \textit{cycloPentene} dataset}
+\label{fig:testcycloPen}
 \end{figure}
 
+We evaluated the performance of each policy in terms of error and robustness. We will find that least square already converges pretty fast and get much lower error in the same amount of iterations compare to the baseline, since it always tries to reach the final density matrix in each iteration. However, considering DAgger trains on the dataset that aggregates new dataset iteration by iteration. As the dataset growing, it adds more diversity to the dataset and lead to a more robust policy which performs better.
+
+Both the least squares and DAgger converge in just the first few iterations when training on the \textit{pent3ene} dataset. Testing this on the other half of \textit{pent3ene} dataset shows the exact same result and DAgger does not perform better than least squares in each individual case. However, DAgger provides a set of coefficients which lead to convergence within a few steps both for $\rho_0 = 0$ and $\rho_0 = I$.
+
+\begin{figure}[h!]
+\centering
+\begin{subfigure}{.5\textwidth}
+  \centering
+  \includegraphics[scale=0.7]{propylsub_pzero_test_12iter.pdf}
+  \caption{$\rho_0 = 0$}
+  \label{fig:propSub0}
+\end{subfigure}%
+\begin{subfigure}{.5\textwidth}
+  \centering
+  \includegraphics[scale=0.7]{propylsub_peye_test_12iter.pdf}
+  \caption{$\rho_0 = I$}
+  \label{fig:propSubI}
+\end{subfigure}
+\caption{Error as a function of iteration tested on \textit{pentPropylF} dataset}
+\label{fig:testpropSub}
+\end{figure}
+
+Evaluating the robustness of these policies by testing on datasets consisting of different molecules are shown in Figure~\ref{fig:testcycloPen} and \ref{fig:testpropSub}. Least squares does not perform as good as DAgger in these cases, this could be due to tendancy to over-fit. DAgger provides also a more robust set of coefficients given that it is trained on two different initial guess density matrices ($\rho_0 = 0$ and $\rho_0 = I$).
 
 
-%Figure \ref{fig:training} shows the error of each policy on training dataset for 12 iterations. The baseline is the policy that always uses the average of the last two density matrices to serve as the input to the next iteration.  We can observe that all the policies seems to  converge within 10 iterations except the baseline fluctuates. The pure linear combination got the lowest error since it always aim for the final objective. On the other hand, DAgger keep aggregating datasets thus has a more diverse training data. Both the DAgger with different experts have similar performance in the first 6 iterations, and fall behinds pure linear combination after iteration 7. 
 
-Figure \ref{fig:testZero} shows the error of each policy on testing dataset for 12 iterations. The baseline is the policy that always uses the average of the last two density matrices to serve as the input to the next iteration.  
+\section{CONCLUSION}
+In the experiment, we first proposed the least squares policy. It is easy to train and already can yield much lower error comparing to the baseline. However, it tend to somewhat over-fit the training data and performance fluctuates on testing data accordingly. On the other hand, DAgger does train a more robust policy which is more flexible with input initial guess. DAgger outperforms least squares when tested on different datasets.  
+During the training process in DAgger, it keeps aggregating the dataset hence has a more diverse training instances. This can prevent the policy from over-fitting the training dataset thus produces a more stable and smooth decreasing trend. This provides a great property when dealing with large molecules or on the case which is hard to get to convergence.
+
+\bibliography{refs}
+
+\end{document}
 
 
-We can observe that all the policies seems to converge within 10 iterations except the baseline fluctuates.
+
+
+
+%Figure \ref{fig:testZero} shows the error of each policy on the cycloPentene testing dataset for 12 iterations. The baseline is the policy that always uses the average of the last two density matrices to serve as the input to the next iteration.  
+%
+%We can observe that all the policies seems to converge within 10 iterations except the baseline fluctuates.
 
 
 %The baseline again fluctuates while all the other policies still converges within 12 iteration. 
-Least squares and DAgger got pretty similar error after 12 iterations.
+%Least squares and DAgger got pretty similar error after 12 iterations.
+%
+%However, the performance of linear combination fluctuates during iteration 5 - 10 while both DAgger with different experts have a more steady decreasing trend across all 12 iterations. 
 
-However, the performance of linear combination fluctuates during iteration 5 - 10 while both DAgger with different experts have a more steady decreasing trend across all 12 iterations. 
-
-\begin{figure}[h!]
-\centering
-\begin{subfigure}{.5\textwidth}
-  \centering
-  \includegraphics[width=1\linewidth]{cycloPen_pzero_test_12iter.pdf}
-  \caption{A subfigure zero}
-  \label{fig:sub1}
-\end{subfigure}%
-\begin{subfigure}{.5\textwidth}
-  \centering
-  \includegraphics[width=1\linewidth]{cycloPen_peye_test_12iter.pdf}
-  \caption{A subfigure eye}
-  \label{fig:sub2}
-\end{subfigure}
-\caption{A figure with two subfigures cycloPentene}
-\label{fig:test}
-\end{figure}
-
-Compare to the result on the training dataset (Figure \ref{fig:training}), the curves are similar for DAgger and baseline, but is pretty different for the least squares. Least squares performs the best and has a smooth result on training dataset while it fluctuates on testing dataset. It is possible because of the least squares over-fit the training dataset. On the contrary, DAgger with the expert that has step size of 2 got more consistent results between training and testing dataset.
-
-
-\begin{figure}[h!]
-\centering
-\begin{subfigure}{.5\textwidth}
-  \centering
-  \includegraphics[width=1\linewidth]{dE_cycloPen_pzero_test_12iter.pdf}
-  \caption{A subfigure Zero}
-  \label{fig:sub1}
-\end{subfigure}%
-\begin{subfigure}{.5\textwidth}
-  \centering
-  \includegraphics[width=1\linewidth]{dE_cycloPen_peye_test_12iter.pdf}
-  \caption{A subfigure Eye}
-  \label{fig:sub2}
-\end{subfigure}
-\caption{A figure with two subfigures dE CycloPentene}
-\label{fig:test}
-\end{figure}
 
 %\begin{figure}[h!]
 %\center
@@ -689,14 +657,24 @@ Compare to the result on the training dataset (Figure \ref{fig:training}), the c
 %\end{figure}
 
 
-\section{CONCLUSION}
-In the experiment, we first proposed the least squares policy. It is easy to train and already can yield much lower error comparing to the baseline. However, it tend to somewhat over-fit the training data and performance fluctuates on testing data accordingly. 
+%Compare to the result on the training dataset (Figure \ref{fig:training}), the curves are similar for DAgger and baseline, but is pretty different for the least squares. Least squares performs the best and has a smooth result on training dataset while it fluctuates on testing dataset. It is possible because of the least squares over-fit the training dataset. On the contrary, DAgger with the expert that has step size of 2 got more consistent results between training and testing dataset.
+%
+%
 
-On the other hand, DAgger does train a more robust policy which has a smooth and steady decreasing trend, and also being consistent from training to testing dataset. 
-
-However, DAgger does not help to gain lower error than the least squares in this experiment. It is possible that because the least squares and the DAgger have the same policy space, both using the linear combination to speed up the whole process, thus DAgger can't gain much benefit from it easily. 
-
-However, during the training process in DAgger, it keeps aggregating the dataset hence has a more diverse training instances. This can prevent the policy from over-fitting the training dataset thus produces a more stable and smooth decreasing trend. This is a great property when dealing with large molecules or on the case which is hard to get to convergence.
-
-
-\end{document}
+%\begin{figure}[h!]
+%\centering
+%\begin{subfigure}{.5\textwidth}
+%  \centering
+%  \includegraphics[scale=0.7]{dE_cycloPen_pzero_test_12iter.pdf}
+%  \caption{$\rho_0 = 0$}
+%  \label{fig:sub1}
+%\end{subfigure}%
+%\begin{subfigure}{.5\textwidth}
+%  \centering
+%  \includegraphics[scale=0.7]{dE_cycloPen_peye_test_12iter.pdf}
+%  \caption{$\rho_0 = I$}
+%  \label{fig:sub2}
+%\end{subfigure}
+%\caption{Error as a function of iteration for test on \textit{cycloPentene} dataset}
+%\label{fig:test}
+%\end{figure}
