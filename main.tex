@@ -65,274 +65,63 @@ Many computational methods in science and engineering use fixed-point iteration
 \[
 x_{n+1} = f(x_n), \quad n = 0,1,2,3...
 \]
-to attempt to find fixed points of $f$, i.e. points at which $f(x)=x$. The iterations generate a sequence, $x_0, x_1, x_2, \ldots$, that ideally converge to a fixed point, $x$. This paper explores the application of imitation learning to fixed-point iteration to accelerate convergence and improve stability. Imitation learning, also called learning from demonstration, is designed to learn a policy that imitates an expert's demonstration so as to become capable of performing the task demonstrated by the expert. For the important fixed-point problems of science and engineering, considerable effort have gone into developing and fine-tuning fixed-point iteration algorithms. The sequences generated from these existing algorithms, x0 x1 x2  provide a basis for creating expert demonstrations with enhanced performance. For example, the series x0 x2 x4 provides an enhanced expert demonstration with accelerated convergence. The use of imitation learning to discover policies that mimic the behavior of such enhanced experts has the potential to substantially improve algorithms that are at the core of much of computational science.
+to attempt to find fixed points of $f$, i.e. points at which $f(x)=x$. The iterations generate a sequence, $x_0, x_1, x_2, \ldots$, that ideally converge to a fixed point, $x$. This paper explores the application of imitation learning to fixed-point iteration to accelerate convergence and improve stability. Imitation learning, also called learning from demonstration, is designed to learn a policy that imitates an expert's demonstration so as to become capable of performing the task demonstrated by the expert. For the important fixed-point problems of science and engineering, considerable effort have gone into developing and fine-tuning fixed-point iteration algorithms. The sequences generated from these existing algorithms, $x_0, x_1, x_2$  provide a basis for creating expert demonstrations with enhanced performance. For example, the series $x_0, x_2, x_4$ provides an enhanced expert demonstration with accelerated convergence. The use of imitation learning to discover policies that mimic the behavior of such enhanced experts has the potential to substantially improve algorithms that are at the core of much of computational science.
 
 
 In the field of computational quantum chemistry, the Hartree-Fock method is a fixed-point algorithm that is used to approximate the electronic structure and energy of molecules. Hartree-Fock is a specific instance of a broader class of mean-field theory approaches to many-body problems. In such mean-field theories, the effect of all individuals on any given individual is approximated by a single averaged effect, thus reducing a many-body problem to a one-body problem. In quantum chemistry, the mean field arises from the averaged charge distribution of the electrons, as described by the electron density, $\rho({\bf r})$. The Hartree-Fock iterations thereby generate a series of electron densities that ideally converge to a fixed point. Quantum chemical methods that go beyond mean-field theory typically begin with the results of a Hartree-Fock calculation, making the Hartree-Fock algorithm a pervasive component of quantum chemistry.\cite{Some authoritative review of electronic-structure theory}
 
 Here, well-established Hartree-Fock algorithms are used to generate series of electron densities from which enhanced expert demonstrations are constructed. We then apply supervised learning to train a policy that mimics the demonstration. However, naive supervised learning may yield poor performance in practice and also in theory.  Because the learner's prediction and action affect future observations and states during the execution of the learned policy, it obviously violates the common i.i.d. assumption made in most statistical learning approaches \citep{Ross}. Fortunately, the dataset aggregation algorithm (DAgger), proposed by Ross et al. \citep{DAgger}, can learn a stationary deterministic policy guaranteed to perform well under its induced distribution of states. This in turn serves as a remedy to the poor performance in naive supervised learning. DAgger also has been shown to have stable performance and fast learning rate \citep{DAggerCompare}. Below, DAgger is shown to yield policies whose performance is superior to those obtained from more naive approaches. 
 
-
-
-The  Hartree-Fock algorithm
-
-Hartree-Fock algorithms use fixed-point iteration to find electron densities that are self-consistent, in that the charge distribution resulting from solving the 
-
-
-In the Hartree-Fock method, the mean-field is described by the density of electronic   
-
-as described above.
-
-The fixed-point algorithm considered here is self-consistent field (SCF) method of quantum chemistry. SCF 
-
-of the electronic structure of molecules. 
-
-In the field of computational chemistry, Hartree-Fock is a method as described above. Hartree-Fock is used mainly in the field of chemistry and physics to approximate the electron distribution and the energy of the system. 
-
-Electron distribution is considered the cornerstone of quantum computation, since many important properties of the quantum system can be induced from it. For example, if we can calculate the electron distribution of a molecule under different geometries, we can solve an important issue in quantum chemistry: the energy minimization problem in which we want to discover the equilibrium geometry of a molecular system given by a position distribution of nuclei and electrons that gives the global minimal energy. 
-
- 
-The electron distribution of a system is expressed by a density matrix in Hartree-Fock. Hartree-Fock is a self consistent method. In each iteration, we will input a density matrix and get another density matrix. This process will be repeated until convergence.
-
-- self-consistent, mean-field solutions
-- convert the many-body problem to a fixed-point iteration
-- find charge distribution that leads to one-particle motion that regenerates the charge distribution
-- the sequence is then that of an object that describes the charge distribution, the density
-- the fock algorithm takes density_i and generates density_i+1. From the density all other properties, including energy and dipole can be easily obtained
-
-
-
-
-
-
-
-The existing fixed-point algorithms of science and engineering, such as the Hartree-Fock algorithm of computational chemistry studied here, have a long history etc. 
-
-
-Here, the expert demonstrations are constructed from sequences $x_0, x_1, x_2, \ldots$ generated by the fixed-point iteration algorithms. Sequences with ? beyond that of the 
-
-
-making better sequences
-learn policies that can generate these improved sequences. 
-Expert demonstrations with properti
-
-Expert demonstrations with Target  
-
-% - faster convergence = lower computational cost
-% - can be unstable 
-
-
-
-In various fields of science and statistics we find iterative processes that converge into self consistency. 
-
-These methods use an iterative process to reach a 
-
-iteratively reach a fixed value by making the result a function of itself. Fixed point iteration methods are described as given in the equation below.
-\[
-x_{n+1} = f(x_n), \quad n = 0,1,2,3...
-\] 
-The fixed point algorithm will iterate until reaching a steady state at which point each iteration will be self-consistent and $f(x)=x$.  
-
-%HF intro
-In the field of computational chemistry, Hartree-Fock is a method as described above. Hartree-Fock is used mainly in the field of chemistry and physics to approximate the electron distribution and the energy of the system. 
-
-Electron distribution is considered the cornerstone of quantum computation, since many important properties of the quantum system can be induced from it. For example, if we can calculate the electron distribution of a molecule under different geometries, we can solve an important issue in quantum chemistry: the energy minimization problem in which we want to discover the equilibrium geometry of a molecular system given by a position distribution of nuclei and electrons that gives the global minimal energy. 
-
- 
-The electron distribution of a system is expressed by a density matrix in Hartree-Fock. Hartree-Fock is a self consistent method. In each iteration, we will input a density matrix and get another density matrix. This process will be repeated until convergence.
-
-% The importance of speeding up Hartree-Fock
-Since Hartree-Fock is a numerical method and the most straightforward implementation yields computation times that scale as the number of atoms to the fourth power, the process can become excessively time-consuming and computationally infeasible.
-
-Since more advanced computational schemes typically start with a Hartree-Fock solution, this leads to a bottleneck in quantum chemistry which may limit the accuracy of the results but also the size of the molecules we can deal with.
-
-Accelerating Hartree-Fock hence becomes a very popular research topic among quantum chemists. For instance, Pulay \citep{Pulay1980} proposed that using a linear combination of few density matrices generated from previous iterations of Hartree-Fock may lead to faster convergence with fewer iterations. Different methods to find the best linear combinations have been explored based on Pulay's model.~\citep{ADIIS,compScuseria} However, how to generate the best linear combination that may lead to the fastest convergence remains an open question \citep{Konstantin2002, Thorsten2011, Alejandro2012}. This raises our interests in finding a promising linear combination which accelerates the process. In particular, with the extra flexibility given by the linear combination of previous density matrices, we would like to make a single iteration of Hartree-Fock achieve as much progress as two or even more iterations of the original Hartree-Fock.
-
-% How to do that? (Imitation learning)
-This idea can be realized through imitation learning, a paradigm also called learning from demonstration that is designed to learn a policy from imitating an expert's demonstrations so as to become capable of performing the same tasks. 
-
-To achieve this goal, we can generate an illustrative trajectory from the base Hartree-Fock trajectory as the expert's demonstrations. Then, we can apply supervised learning to train a policy that mimics the demonstration. 
-
-% Problem encountered   %%%%%
-However, naive supervised learning may yield poor performance in practice and also in theory.  Since the learner's prediction and action affect future observations and states during the execution of the learned policy, it obviously violates the common i.i.d. assumption made in most statistical learning approaches \citep{Ross}.
-
-
-
-% The recipe (DAgger)
-Fortunately, the dataset aggregation algorithm (DAgger), proposed by Ross et al. \citep{DAgger}, can learn a stationary deterministic policy guaranteed to perform well under its induced distribution of states. This in turn serves as a remedy to the poor performance in naive supervised learning. Besides, DAgger also has been proven to have stable performance and fast learning rate \citep{DAggerCompare}.
-
-Based on these results, we introduce the idea of using imitation learning to speed up the Hartree-Fock process in the present study. By extracting an illustrative trajectory from original Hartree-Fock process
-through dataset aggregation algorithm (DAgger) \citep{DAgger}, we can train a set of linear combinations that can perform well under the induced distribution of states and yield more progress in each iteration as well. 
-
-%introducing “parameter" into HF  turn it to Machine learning problem.
-
 \section{BACKGROUND}
 
 \subsection{Hartree-Fock}
 
-
-% Goeff's comment
-% We are not just care about computing the whole energy
-% We also care about the sub-region energy and electron density directly
-% The goal is to calculate the properties of the molecule such as the energy and density
-
-A main objective in the area of theoretical chemistry is to find a method that can efficiently calculate the electronic distribution of any given molecular system. %Through the electronic distribution we can approximate the whole molecule structure.
-%Efficiently computing the energy of a molecule as a function of its structure, E(R), is one of the most fundamental challenges in computational chemistry. 
-Algorithms with sufficient accuracy are now available, and the Hartree-Fock (HF) algorithm is the starting point.
-
-
-
-% What is wave function, what is density matrix, 
-In quantum mechanics, all particles can exhibit not only particle-like but also wave-like properties. Accordingly, the quantum state of the whole system can be described by a wave function $\Psi$, which contains all the information about the system considered in isolation. Since the wave function for a given system does not have a unique representation, in general, we can represent the wave function using a set of basis functions $\phi_a$ which should be continuously differentiable. And also, the square of the modulus of the wave function representing the probability density, the square integral of the wave function should be 1.
-%Basis functions are best described using Slater functions/exponent. However, because of the computational difficulty of calculating the integral, choosing the basis set to have linear combination of Gaussian functions is more computationally efficient and commonly used. 
-For computational efficiency, it is common to choose our basis functions to be linear combinations of Gaussian radial basis functions.
-The more Gaussian functions are used in the basis set, the more accurate results we can attain, but the slower the computation.. To increase the accuracy, speeding up the whole process is a very critical issue. \\
-
-% Why does Hartree-Fock work on density matrices instead of wave function
-% It's hard to describe multiple particles by wave function
-% Particles are interchangeable so we can summrize it as density matrices
-
-
-
-% Geoff's comment
-% we choose each basis element to be a linear combination of  Gaussian function (because of efficiency)
-%To computationally describe the atomic orbitals, basis functions are used and collectively they are called a basis set. Basis functions are best described using Slater functions/exponent. But because of the computationally difficulty of calculating the integral, approximating the the basis set by a linear combinations of Gaussian functions is more computation efficient and more commonly used. 
-
-
-The Schr\"{o}dinger equation is the foundation equation of quantum mechanics, in which, given the geometry and the environment of a system, the solution gives the wave functions and the energy of the system. 
-The time invariant Schr\"{o}dinger equation can be represented as:
-\[
+The core problem of quantum chemistry is to compute the electronic distribution, given the position of the nuclei. In Hartree-Fock theory, the distribution is described by the electron density, $\rho({\bf r})$, which gives the probability of finding any electron at the position ${\bf r}$. Hartree-Fock theory derives from the time-independent Schr\"{o}dinger equation,
+\begin{equation} \label{eq:schrodinger}
 				\hat{H}\Psi = E\Psi
-\]
-The $\hat{H}$ is the Hamiltonian operator which operates on the wave-function $\Psi$ providing the result equal to the energy $E$ times the wave-function $\Psi$. The Hamiltonian operator is given by the sum of two operators as: $\hat{H} = \hat{T} + \hat{V}$,  where $\hat{T}$ and $\hat{V}$ are the kinetic energy operator and the potential energy operator respectively. 
-The time-invariant Schro\"{o}dinger equation is an eigenvalue problem; in general, it will have multiple solutions $(E_1, \Psi_1), (E_2,\Psi_2), \ldots$ of different energies.  
+\end{equation}
+where $\hat{H}$ is the Hamiltonian operator and the many-body, or many-electron, wave-function $\Psi$ is an eigenfunction of that operator. Different $\Psi$'s correspond to different quantum states of the system, but the goal of Hartree-Fock theory is to approximate the lowest-energy state. [expand?]  Hartree-Fock theory uses a mean-field approach to convert the many-body Schr\"{o}dinger equation to a one-electron problem,
+\begin{equation} \label{eq:fockSchrodinger}
+				\hat{F}\phi_a({\bf r}) = \epsilon_a \phi_a({\bf r})
+\end{equation}
+where $\hat{F}$ is the Fock operator, $\phi_a({\bf r})$ are the molecular orbitals, which describe the possible quantum states of individual electrons, and $\epsilon_a$ are the molecular orbital energies. An approximation for the many-electron system is then constructed by assuming the $N$ electrons of the molecule occupy the lowest-energy orbitals, consistent with the Pauli exclusion principle restriction of placing at most two electrons (one with spin up and one with spin down) into any given molecular orbital. The Fock operator
+\begin{equation} \label{eq:fock}
+\hat{F}(\rho) = \hat{h}_1 + \hat{G}(\rho({\bf r}))
+\end{equation}
+where $\hat{h}_1$ is the one-electron Hamiltonian containing the operators that account for the kinetic energy of the electrons and the interaction of the electrons with the nuclei. $\hat{G}$ is an operator that captures the interaction between a single electron and the mean field resulting from all electrons. This mean field is constructed from the electron density, $\rho({\bf r})$. 
 
-%DELETED BY GEOFF
-%ach solution is called a (molecular) orbital, and represents a time-invariant wave function which a particle (in our case an electron) can occupy.
+For computational expediency, the molecular orbitals, $\chi_a$ of Eq.~\ref{eq:fockSchrodinger} are written as a linear combination of atomic orbitals,
+\begin{equation}\label{eq:lcao}
+\phi_a({\bf r}) = \sum_{i=1}^{N_{basis}} \chi_i({\bf r}) C_{i,a}
+\end{equation}
+The set of basis functions provides a finite-dimensional Hilbert space in which to obtain approximate solutions. In this space, the operators $\hat{F}$, $\hat{h}_1$ and \hat{G}, along with the density $\rho({\bf r})$ become symmetric matrices of dimension $N_{basis}$ and Eq.~\ref{eq:fockSchrodinger} becomes a generalised matrix eigenvalue problem,
+\begin{equation}\label{eq:fockMatrix}
+F(\rho)C = SC\epsilon
+\end{equation}
+where $F$ is the Fock matrix and $S$ is the overlap matrix of inner products of the basis functions. $\rho$ is the density matrix which expresses the electron density $\rho(({\bf r})$ in the basis set and is given by $C^TC$. Hartree-Fock scales nominally as $N_{basis}^4$ due to the evaluation of $\hat{G}$, although scalings closer to $N_{basis}^3$ are routinely achieved by taking advantage of sparsity in construction of $\hat{G}$\ref{?}.
 
-%The integrals of the these basis functions are viewed as matrices when solving the HF algorithm.
-
-
-% Some intuition about these matrices
-% Run Hartree to get the eigen states of h2. 
-% show the first few eigen states (Schr\"{o}dinger) of the h2 molecules and describe how the density matrices correspond to that plot (picture) to make things more concrete 
-
-Since there is no analytical solution to the quantum many-body problem, Hartree-Fock (HF) is a numerical method for finding approximate solutions to the time invariant Schr\"{o}dinger equation. 
-
-
-%density matrix doesn’t make computation simpler.  The density operator allows multiple eigenvalues to be present at once, which (by Pauli exclusion principle) allows more than one electron.  Density matrix is the representation of the density operator in our basis.
-
-%Density matrices are exactly and only to solve the problem that wave functions cannot represent classical uncertainty (like coin flips).
-
-
-%The molecular orbitals, $\phi_a$, are given by:
-
-%\[
-%\phi_a = \sum_i c_{i,a} \chi_i
-%\]
-
-%where $\chi_i$ are the atomic orbitals. We assume restricted Hartree-Fock theory, in which each orbital is doubly occupied (containing one electron with up and one down spin). The density matrix captures the distribution of electrons in a molecule and is given by :
-
-%\[
-%\rho_{i,j} = 2 \sum_{a} c_{i,a}c_{j,a}
-%\]
-
-%where the sum is over all filled orbitals, $a$.
-
-In HF, the many-electron Hamiltonian is simplified to a one-electron operator, named the Fock operator, which is given by
-
-%the Hamiltonian can be approximated by the Fock operator as shown below.
-\[
-\hat{F}(\rho) = \hat{h}_1 + \hat{G}(\rho)
-\]
-where $\hat{h}_1$ is the one electron Hamiltonian containing the kinetic energy operator and the electron-nuclear interaction operator. $\hat{G}$ is the approximation of the two electron interaction which accounts for interaction between electrons, here accounted for as an average interaction. The nuclear-nuclear interaction is a constant so not accounted for in the Fock operator. 
-
-In HF the time invariant Schr\"{o}dinger equation is approximated into the Roothaan equation which has the form of a generalized eigenvalue problem:
-\[
-FC = SC\epsilon
-\]
-
-%Geoff's comment
-
-% We might not need to talk about how we get fock operator other than that is an function of the density matrix (Put it into Appendix) [too much details and distract]
-
-where $F$ is the Fock matrix which is described with the Fock operator and our set of basis functions,
-
-\[
-F_{ij} = \int \phi_i^*\hat{F}\phi_j
-\]
-
-And $S$ is the overlap matrix given by
-
-\[
-S_{ij} = \int \phi_i^*\phi_j
-\]
-
-
-This matrix will reduce to the identity if we have an orthonormal basis set. $\epsilon$ is a diagonal matrix of the orbital energies. 
-Solutions to Roothaan equation are called molecular orbitals, are represented as a linear combination in our basis as $\sum_i c_{a,i}\phi_i$, where $c_{a}$ is the a-th column of $C$. 
-Though there are many matrices $C$ that satisfy the Roothaan equation, 
-we'll only pick the one that conforms the the Pauli exclusion principle.
-That is the solution which has double occupancy of each molecular orbital (one electron with up and one with down spin) starting from lowest energy orbital. These molecular orbitals can then be used to get density matrix $\rho = CC^*$ 
-%(or 2 $CC^*$ depending on which convention you want to use for $C_{occ}$) by using the assumption of 2 electrons per molecular orbital starting from the lowest-energy one.
-
-
-%$C$ is the coefficient matrix of all the molecular orbitals, $c_{i,a}$ . In RHF it can be used to get the density matrix $\rho$ =  $C_{occ}{C_{occ}}^*$ in which $C_{occ}$ is the coefficient matrix of all the occupied orbitals.
-
-
-
-%The Fock operator doesn’t directly approximate the Hamiltionian.  There are two steps here: 
-
-%one is to approximate the Schroedinger equation by a single-electron problem (accounting for other electrons by an average interaction or field).  
-
-%Second is to approximate this approximation by moving to a finite basis (density matrix instead of density operator).  The Fock operator is the first step, and the Fock matrix is the second.
-
-%The Hartree-Fock (HF) approach relies on assuming that the ground state of a many-fermion system can be uniquely characterized by the one-body density matrix (59). There are many ways of deriving the HF equations; the simplest one is to use the variational principle together with the following approximation of the two-body density matrix (60): 
-
-%by picking the least-energetic k eigenvalues/vectors
-
-% DELETE BY DAVE
-%By performing a transformation of the basis to get an orthogonal basis will make $S$ vanish leading to eigenvalue equation problem. However, a
-
-As we mentioned before, since $F$ depends on $\rho$ and $\rho$ can be updated by $C$ which is again depends on $F$, we can only approach the final density matrix iteratively.
-
-More specifically, to solve this equation, we start with an arbitrary guess density $\rho_0$ as an input and construct the Fock operator. 
-After we have the Fock operator, we can solve for $C$ by Roothann equation and update the density matrix to $\rho_1$. The procedure for updating $\rho_0$ to $\rho_1$ is the first iteration. Then in the iteration $i$, the previous output density matrix $\rho_{i-1}$ will serve as the input to the current iteration.
-
-We will keep doing this procedure until the difference of the energy given by the input density matrix in the iteration $n$, $\rho_{n-1}$,  and the output density matrix $\rho_n$ is less than a threshold, say $10^{-6}$.  A description of the whole process is given by Algorithm \ref{alg:hf}.
-
-%The process will be repeated until it meets the termination criteria. 
-
-%In other words, to get the Fock operator we need to have a density matrix $\rho$. The density matrix $\rho$ can be computed by C which is given by solving the Roothann equation. And again the equation depends on Fock operator. As a result, to solve this equation, we start with an arbitrary guess density $\rho_0$ and solve for the Fock operator. After we have the Fock operator, we can solve for C and update the density matrix to $\rho_1$. We will then use the new density which we again will use it to solve the new Fock operator.
-
-
-% Make claer what  the input and oput are
-% single electron density matrix is the input and output 
 
 \begin{algorithm}[htb]
- \KwData{ 3D coordinates of atomic nucleus}
+ \KwData{ 3D coordinates of atomic nuclei}
  \KwResult{Density matrix which gives minimum energy}
-	Set up the size of the basis set \\
+	Choose basis set of desired size \\
 	Initialize $i \leftarrow	 0$ \\	
-	Pick a guess density $\rho_0$ \\
+	Pick a starting density matrix $\rho_0$ \\
 	Pick $\delta$ to be a small value (termination criteria) \\
- \While{ $i=0$ or $|E(\rho_{i}) - E(\rho_{i-1})| > \delta$ }{
-	Calculate the Fock operator  $F \leftarrow h_1 + G(\rho_i)$\\
-	Solve for $\epsilon$ and $C$ using Roothaan equation \\
-	Update density matrix $\rho_{i+1}$ = $CC^*$\\
+ \While{ $i=0$ or $|E_{i} - E_{i-1}| > \delta$ }{
+    Construct guess density matrix $\rho$ from available $\rho_i$ \\
+	Calculate the Fock operator  $F \leftarrow h_1 + G(\rho)$\\
+	Solve for $\epsilon$ and $C$ using Eq.~\ref{eq:fockMatrix} \\
+	Update density matrix $\rho_{i+1}$ = $C^TC$\\
 	$i \leftarrow i+1$ \\
  }
  \caption{Hartree-Fock algorithm}
 \label{alg:hf}
 \end{algorithm}
 
-In large molecular system, the process is extremely time consuming and each iteration may take hours or even days of computation and thus become infeasible. 
-As a result, a means to accelerate convergence of the Hartree-Fock process becomes an critical issue in quantum chemistry.
-
-
+The corresponding fixed point iteration is shown in Algorithm\ref{alg:hf}. Implementations differ with regards to the means used to construct the starting density matrix and, more importantly for the current study, with regards to the means used to construct a guess density matrix from past iterates, $\rho_i$. This is typically done by taking a linear combination of these past iterates. In the Direct Inversion in the Iterative Subspace (DIIS) method\citep{Pulay1980}, the linear coefficients are chosen by associating an error vector which each iterate and choosing coefficients that minimize the summed error. Various methods have been used to define the error vector and to find the linear combinations that minimize the predicted error.~\citep{ADIIS,compScuseria,Alejandro2012} However, how to generate linear combinations that lead to the fastest convergence remains an open question\citep{Konstantin2002, Thorsten2011}. The current work retains the approach of using a linear combination of past iterates, but uses supervised learning to discover the optimal coefficients. 
 
 \subsection{Speeding up Hartree-Fock as an imitation learning problem}
-
 
 Accelerating Hartree-Fock convergence has previously been explored in the matter of creating a linear combination of the density matrices generated from previous iterations to serve as a better input to the next iteration of Hartree-Fock \citep{Pulay1980}. 
 
@@ -383,35 +172,15 @@ As a consequence, by imitation learning, it's possible to make more progress in 
 
 \subsection{DAgger algorithm}
 % sovle the naive imitation learning problem
-DAgger is an algorithm that learns from the expert's demonstration iteratively. In each iteration, the model is trained under the states that were induced by both the expert and the previous learned model. It keeps aggregating a set of inputs that the model itself is likely to encounter based on previous training iterations.  
+DAgger is an algorithm that learns from an expert demonstration in an iterative manner. In each iteration, a model is trained under the states that were induced by both the expert and by the previous learned models. This aggregation expands the training to include inputs that the model is likely to encounter based on previous training iterations. By doing so, it is possible to offset the error made by previous learned models and thus learn a new policy that better approaches the demonstration. This is a remedy to the problem, in naive supervised learning, that the error may grow quadratically and results may become unpredictable because the policy is trained under a different state distribution than the model may encounter. 
 
-By doing so, it is possible to offset the error made by previous learned model and thus learn a new policy that approaches the demonstration better. This is a remedy to the problem in naive supervised learning that the error may grow quadratically and results may become unpredictable because the policy is trained under a different state distribution than the model may encounter. 
-%Thus the error may keep growing iteration by iteration.
 
-%Rough Algorithm Description
-The DAgger algorithm is given as Algorithm \ref{alg:DAgger}.
-%%% FROM Original paper
-%%% TODO 
-$\Pi$ is the class of policies the learner is considering.
+The DAgger algorithm is given as Algorithm \ref{alg:DAgger}. $\Pi$ is the class of policies the learner is considering.
 In the first iteration, it uses the expert's policy $\pi^*$ to gather
 a dataset of trajectories $D$ and train a policy $\hat{\pi}_2$ that best mimics the expert on those trajectories. 
 
 Then in iteration $i$, we sample states according to a mixture of policies ($\hat{\pi}_i$ and the expert $\pi^*$) and refer to expert's action on these states, forming the dataset $D_i$, which is in turn added to the overall dataset $D$. We then train the next policy $\hat{\pi}_{i+1}$, the policy that best mimics the expert on the whole dataset $D$. The process is then repeated to further rectify the error produced by the policy learned in the previous iteration until we reach iteration $N$.
 
-%In other words, to solve the problem introduced from naive imitation learning that the error may grow quadratically, DAgger proceeds by aggregating a dataset at each iteration under the current policy, then trains the next policy under all collected datasets. 
-
-
-%In general, there are two different strategies to learn the policy. Either we can try to learn a single policy that imitate the expert's demonstration under all circumstances, or we train multiple policies that approximate expert's demonstration in which each policy best mimic expert's demonstration under different scenario. It's obvious that using multiple policies gives us more flexibility, thus in the following section, we would like to introduce how we train a sequence of Hartree-Fock with embedded parameters, in which each set of parameter can best speed up a correspondent iteration.
-
-
-
-%However, Like most of the iterative algorithm, the result may oscillate dramatically in the very first few iterations then getting stable and finally become converged after a bunch of iterations. 
-
-
-
-%For example, during training one
-%can use a “mixture oracle” that at times takes an action given by the previous learned policy [11].
-%Alternatively, at each iteration one can learn a policy from trajectories generated by all previous policies [3].
 
 
 \begin{algorithm}[htb]
