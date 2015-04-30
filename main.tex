@@ -54,17 +54,80 @@
 
 
 \begin{abstract}
-A means to accelerate iterative processes by using imitation learning is provided. This work focuses on the application of quantum mechanics and solving Hartree-Fock, which isa method for approximating the electron distribution and energy of a given molecular system. Hartree-Fock is excessively time-consuming or even infeasible when applied to large molecules. Besides, depending on input, it is not always guaranteed to converge to a solution. Speeding up Hartree-Fock and making it more robust would thus enable scientists to deal with more complicated molecules and study chemical reactions with larger systems. In the present work, we attempt to improve on Hartree-Fock by imitation learning: from the trajectory produced by the original Hartree-Fock, we extract an (expensive to evaluate) expert policy which converges to a solution quickly and reliably, and attempt to imitate this policy with a less-expensive policy class.  To solve the imitation learning problem, we apply the Dataset Aggregation algorithm (DAgger), which learns a policy that is guaranteed to perform well under its induced distribution of states. In the experiment, we show that after 
+A means to accelerate iterative processes by using imitation learning is provided. This work focuses on the application of quantum mechanics and solving Hartree-Fock, which is a method for approximating the electron distribution and energy of a given molecular system. Hartree-Fock is excessively time-consuming or even infeasible when applied to large molecules. Besides, depending on input, it is not always guaranteed to converge to a solution. Speeding up Hartree-Fock and making it more robust would thus enable scientists to deal with more complicated molecules and study chemical reactions with larger systems. In the present work, we attempt to improve on Hartree-Fock by imitation learning: from the trajectory produced by the original Hartree-Fock, we extract an (expensive to evaluate) expert policy which converges to a solution quickly and reliably, and attempt to imitate this policy with a less-expensive policy class.  To solve the imitation learning problem, we apply the Dataset Aggregation algorithm (DAgger), which learns a policy that is guaranteed to perform well under its induced distribution of states. In the experiment, we show that after 
 %applying one iteration of DAgger, we got a faster convergence. 
  multiple iterations of DAgger, the performance improves and becomes less over-fit. 
 \end{abstract}
 
 \section{INTRODUCTION}
-% intro
+
+Many computational methods in science and engineering use fixed-point iteration
+\[
+x_{n+1} = f(x_n), \quad n = 0,1,2,3...
+\]
+to attempt to find fixed points of $f$, i.e. points at which $f(x)=x$. The iterations generate a sequence, $x_0, x_1, x_2, \ldots$, that ideally converge to a fixed point, $x$. This paper explores the application of imitation learning to fixed-point iteration to accelerate convergence and improve stability. Imitation learning, also called learning from demonstration, is designed to learn a policy that imitates an expert's demonstration so as to become capable of performing the task demonstrated by the expert. For the important fixed-point problems of science and engineering, considerable effort have gone into developing and fine-tuning fixed-point iteration algorithms. The sequences generated from these existing algorithms, x0 x1 x2  provide a basis for creating expert demonstrations with enhanced performance. For example, the series x0 x2 x4 provides an enhanced expert demonstration with accelerated convergence. The use of imitation learning to discover policies that mimic the behavior of such enhanced experts has the potential to substantially improve algorithms that are at the core of much of computational science.
 
 
-% Self consistent methods
-In various fields of science and statistics we find iterative processes that converge into self consistency. These methods gives means to iteratively reach a fixed value by making the result a function of itself. Fixed point iteration methods are described as given in the equation below.
+In the field of computational quantum chemistry, the Hartree-Fock method is a fixed-point algorithm that is used to approximate the electronic structure and energy of molecules. Hartree-Fock is a specific instance of a broader class of mean-field theory approaches to many-body problems. In such mean-field theories, the effect of all individuals on any given individual is approximated by a single averaged effect, thus reducing a many-body problem to a one-body problem. In quantum chemistry, the mean field arises from the averaged charge distribution of the electrons, as described by the electron density, $\rho({\bf r})$. The Hartree-Fock iterations thereby generate a series of electron densities that ideally converge to a fixed point. Quantum chemical methods that go beyond mean-field theory typically begin with the results of a Hartree-Fock calculation, making the Hartree-Fock algorithm a pervasive component of quantum chemistry.\cite{Some authoritative review of electronic-structure theory}
+
+Here, well-established Hartree-Fock algorithms are used to generate series of electron densities from which enhanced expert demonstrations are constructed. We then apply supervised learning to train a policy that mimics the demonstration. However, naive supervised learning may yield poor performance in practice and also in theory.  Because the learner's prediction and action affect future observations and states during the execution of the learned policy, it obviously violates the common i.i.d. assumption made in most statistical learning approaches \citep{Ross}. Fortunately, the dataset aggregation algorithm (DAgger), proposed by Ross et al. \citep{DAgger}, can learn a stationary deterministic policy guaranteed to perform well under its induced distribution of states. This in turn serves as a remedy to the poor performance in naive supervised learning. DAgger also has been shown to have stable performance and fast learning rate \citep{DAggerCompare}. Below, DAgger is shown to yield policies whose performance is superior to those obtained from more naive approaches. 
+
+
+
+The  Hartree-Fock algorithm
+
+Hartree-Fock algorithms use fixed-point iteration to find electron densities that are self-consistent, in that the charge distribution resulting from solving the 
+
+
+In the Hartree-Fock method, the mean-field is described by the density of electronic   
+
+as described above.
+
+The fixed-point algorithm considered here is self-consistent field (SCF) method of quantum chemistry. SCF 
+
+of the electronic structure of molecules. 
+
+In the field of computational chemistry, Hartree-Fock is a method as described above. Hartree-Fock is used mainly in the field of chemistry and physics to approximate the electron distribution and the energy of the system. 
+
+Electron distribution is considered the cornerstone of quantum computation, since many important properties of the quantum system can be induced from it. For example, if we can calculate the electron distribution of a molecule under different geometries, we can solve an important issue in quantum chemistry: the energy minimization problem in which we want to discover the equilibrium geometry of a molecular system given by a position distribution of nuclei and electrons that gives the global minimal energy. 
+
+ 
+The electron distribution of a system is expressed by a density matrix in Hartree-Fock. Hartree-Fock is a self consistent method. In each iteration, we will input a density matrix and get another density matrix. This process will be repeated until convergence.
+
+- self-consistent, mean-field solutions
+- convert the many-body problem to a fixed-point iteration
+- find charge distribution that leads to one-particle motion that regenerates the charge distribution
+- the sequence is then that of an object that describes the charge distribution, the density
+- the fock algorithm takes density_i and generates density_i+1. From the density all other properties, including energy and dipole can be easily obtained
+
+
+
+
+
+
+
+The existing fixed-point algorithms of science and engineering, such as the Hartree-Fock algorithm of computational chemistry studied here, have a long history etc. 
+
+
+Here, the expert demonstrations are constructed from sequences $x_0, x_1, x_2, \ldots$ generated by the fixed-point iteration algorithms. Sequences with ? beyond that of the 
+
+
+making better sequences
+learn policies that can generate these improved sequences. 
+Expert demonstrations with properti
+
+Expert demonstrations with Target  
+
+% - faster convergence = lower computational cost
+% - can be unstable 
+
+
+
+In various fields of science and statistics we find iterative processes that converge into self consistency. 
+
+These methods use an iterative process to reach a 
+
+iteratively reach a fixed value by making the result a function of itself. Fixed point iteration methods are described as given in the equation below.
 \[
 x_{n+1} = f(x_n), \quad n = 0,1,2,3...
 \] 
