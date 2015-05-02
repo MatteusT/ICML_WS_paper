@@ -231,22 +231,20 @@ The following three data sets were generated, with the first being used for trai
 \item[\textit{pentPropylF}] Includes the three singly-substituted species of pent-3-ene-2-propyl-1-Fluorine (Figure~\ref{fig:propSub}), each in its minimum-energy geometry and 7 distorted geometries. Distortions include free rotation about leftmost carbon-carbon single bond of Figure~\ref{fig:propSub}. 
 \end{description}
 
-For each molecular instance, expert demonstrations of Hartree-Fock fixed-point iteration are generated using the DIIS algorithm\cite{Pulay1980}. The learning objective is the sum of the L2 norm of the difference between the density matrix and the converged density matrix, $\|\rho_i-\rho_n\|$, and norm of the difference between the total molecular energy, $|E(\rho_i)-E(\rho_n)|$, in units of Hartrees. 
-
-
-Regularization is included by adding the following to the objective [TODO: Translate the regularization to the $\hat{c}^{(i)}_j$ notation. Also, this is not regularization, it is an approximate way to include the "constraint" that the coefficients of the linear combination should sum to one.]
+For each molecular instance, the steady-state density matrix, $\rho_n$, is obtained using a standard fixed-point algorithm\cite{Pulay1980}. This allows the learning objective to be defined as the sum of the differences in the density matrix, $\|\rho_i-\rho_n\|$, and the molecular energy, $|E(\rho_i)-E(\rho_n)|$ in units of Hartrees. As in DIIS methods\cite{scusceria}, it is likely advantageous to have the coefficients of the linear combination of density matrices sum to one. This is promoted by adding the following to the objective,
 \[
-R^{(i)}_j =  w [(\sum \hat{c}^{(i)}_j) - 1]
+R^{(i)}_j =  w [(\sum \|\hat{c}^{(i)}_j\| - 1]
 \]
 where the weight $w$ was empirically adjusted to a value of 30. 
 
-The approach of Section~\ref{sec:policy} was used to train a policy 
+To obtain a expert demonstration that is optimal for the training data, we use the following procedure. We first train a policy that takes the initial density matrix to the final density matrix $(\rho_0) \rightarrow \rho_n$,
 
 
 In the experiment, we will compare two different policies with baseline. The baseline is the policy that always uses the average of the last two density matrices to serve as the input to the next iteration.
 %MENTION THE PURE LINEAR COMBINATION
 %In the experiment, we built up two expert's policies.
 One naive approach to build the first good policy is always using all the density matrices we have to generate a linear combination that best approaches the final steady-state density matrix after one Hartree-Fock iteration.  For example, from guess density matrix $\rho_0$ we will find the best coefficient that makes the output best approaches the final objective. However, we may get some error thus the result of the first iteration is $\rho_1$.  In the next iteration, again we will try to find the linear combination $(\rho_0, \rho_1)$ that best approaches the final density matrix. We can keep doing this procedure until the output of the Hartree-Fock reaches the final steady-state density matrix.
+
 Because we already know the final steady-state density matrix, and in each iteration we aim for the final objective directly, it's possible that we can build up a trajectory that reaches final density matrix much faster then the original process. At the same time, we will learn a policy from it. Let's call it the ``least squares'' policy.
 
 %SHOULD ALSO MENTIONED TWO DIFFERENT EXPERT \\
