@@ -223,7 +223,6 @@ The computational experiments use the approach of Section~\ref{sec:policy} to tr
 \label{fig:Molecules}
 \end{figure}
 
-
 The following three data sets were generated, with the first being used for training and the remaining used for testing. Each data set consists of a set of molecules, as defined by the bonding pattern between the atoms, and a set of distinct molecular geometries of these molecules, as defined by distortions of the structure away from the equilibrium geometry at which the energy of the molecule is minimized. This geometric distortions are generated using a random uniform distribution of $\pm$0.5 \AA\ for bond lengths and $\pm$10\textsuperscript{o} for bond angles.  This approach of uniform sampling generates highly distorted structures. To prevent inclusion of structures that are of little interest in chemical applications, structures are rejected if there are contacts closer that 3\AA\ between non-bonded atoms.  In addition, each molecular configuration is placed in 4 different environments (1 with no environment + 3 different fields for X, Y and Z direction).
 \begin{description}
 \item[\textit{pent3ene}] 15 unique molecules corresponding to single substition of Pent-3-ene. Single substitution refers to placing a single substituent at one of the positions indicated by R in Figure~\ref{fig:pent3ene}, with all other R's being hydrogen (-H). The substituents are flourine (-F), hydroxyl (-OH) and amine (-NH\textsubscript{2}). The training set includes, for each molecule, the equilibrium geometry and three distorted geometries. The test set includes three distorted geometries for each molecule. Distortions include free rotation about leftmost carbon-carbon single bond of Figure~\ref{fig:pent3ene}. 
@@ -231,29 +230,20 @@ The following three data sets were generated, with the first being used for trai
 \item[\textit{pentPropylF}] Includes the three singly-substituted species of pent-3-ene-2-propyl-1-Fluorine (Figure~\ref{fig:propSub}), each in its minimum-energy geometry and 7 distorted geometries. Distortions include free rotation about leftmost carbon-carbon single bond of Figure~\ref{fig:propSub}. 
 \end{description}
 
-For each molecular instance, the steady-state density matrix, $\rho_n$, is obtained using a standard fixed-point algorithm\cite{Pulay1980}. This allows the learning objective to be defined as the sum of the differences in the density matrix, $\|\rho_i-\rho_n\|$, and the molecular energy, $|E(\rho_i)-E(\rho_n)|$ in units of Hartrees. As in DIIS methods\cite{scusceria}, it is likely advantageous to have the coefficients of the linear combination of density matrices sum to one. This is promoted by adding the following to the objective,
-\[
+%Geoff: Is R a form of regularization? 
+For each molecular instance, the steady-state density matrix, $\rho_n$, is obtained using a standard fixed-point algorithm\cite{Pulay1980}. The learning objective is then defined as the sum of the distance of the density matrix, $\|\rho_i-\rho_n\|$, and the molecular energy, $|E(\rho_i)-E(\rho_n)|$ in Hartrees, from convergence. Because As in DIIS methods, it is likely desirable to have the coefficients of the linear combination of density matrices sum to one\cite{scusceria} the following is added to the objective,
+\begin{equation}
 R^{(i)}_j =  w [(\sum \|\hat{c}^{(i)}_j\| - 1]
-\]
+\end{equation}
 where the weight $w$ was empirically adjusted to a value of 30. 
 
-To obtain a expert demonstration that is optimal for the training data, we use the following procedure. We first train a policy that takes the initial density matrix to the final density matrix $(\rho_0) \rightarrow \rho_n$,
+%TODO: Is it single iteration DAgger? Ok to rename as no-induced-states
+An expert demonstration that is optimal for the training data is then constructed as follows. We first train a policy that takes the initial density matrix to the final density matrix $(\rho_0) \rightarrow \rho_n$, and use this generate $\rho_1$. A policy is then trained on $(\rho_0, \rho_1) \rightarrow \rho_n$ and used to generate $\rho_2$. This approach is essentially single-iteration DAgger targetting $\rho_n$ and will be referred to as the ``no induced states'' policy. Every instance in the training data converges in less than 12 iterations, which is considerably faster than DIIS\cite{Pulay1980} and so provides a high-quality expert demonstration. Enhanced expert demonstrations are then created by eliminating the odd numbered iterations and DAgger is used to train a policy that mimics this enhanced demonstration, as in Section~\ref{sec:policy}. 
 
-
-In the experiment, we will compare two different policies with baseline. The baseline is the policy that always uses the average of the last two density matrices to serve as the input to the next iteration.
-%MENTION THE PURE LINEAR COMBINATION
-%In the experiment, we built up two expert's policies.
-One naive approach to build the first good policy is always using all the density matrices we have to generate a linear combination that best approaches the final steady-state density matrix after one Hartree-Fock iteration.  For example, from guess density matrix $\rho_0$ we will find the best coefficient that makes the output best approaches the final objective. However, we may get some error thus the result of the first iteration is $\rho_1$.  In the next iteration, again we will try to find the linear combination $(\rho_0, \rho_1)$ that best approaches the final density matrix. We can keep doing this procedure until the output of the Hartree-Fock reaches the final steady-state density matrix.
-
-Because we already know the final steady-state density matrix, and in each iteration we aim for the final objective directly, it's possible that we can build up a trajectory that reaches final density matrix much faster then the original process. At the same time, we will learn a policy from it. Let's call it the ``least squares'' policy.
-
-%SHOULD ALSO MENTIONED TWO DIFFERENT EXPERT \\
-Though we already aim for the final objective in each iteration, we still can try to build up a better expert's demonstration from it and perhaps train another policy which is faster than the least squares one.
-
-In the experiment, we built up two different cases of expert's policies. Both are from the trajectory that has a step size of two of the ``least squares'' trajectory. What differs is the initial guess density, one expert policy is the least squares fitting of the process with the initial guess set to zero ($\rho_0 = 0$) and the other expert policy has the initial guess set to an identity matrix ($\rho_0 = I$). Both these experts are aggregated and trained simultaneously in the training of the DAgger model. 
+To further expand the training data, expert demonstrations are constructed starting from two different initial density matrices, $\rho_0$ of Algorithm~\ref{alg:hf} equal to 0 and to the identity matrix. This leads to two different expert demonstrations for each molecular instance that sample substantially different states in the initial trajectories. 
+As a ``baseline'' policy for comparison, we use the simple, but still utilized, policy in which the density matrix for iteration $i$ is the average of the density matrices from the past two iterations.
 
 \section{RESULTS}
-
 
 
 \begin{figure}[h!]
@@ -274,9 +264,11 @@ In the experiment, we built up two different cases of expert's policies. Both ar
 \label{fig:testcycloPen}
 \end{figure}
 
-We evaluated the performance of each policy in terms of error and robustness. We will find that least square already converges pretty fast and get much lower error in the same amount of iterations compare to the baseline, since it always tries to reach the final density matrix in each iteration. However, considering DAgger trains on the dataset that aggregates new dataset iteration by iteration. As the dataset growing, it adds more diversity to the dataset and lead to a more robust policy which performs better.
+The performance of the policies discussed above on the training and test data are shown in Figures XX. Both the least squares and DAgger policies converge more rapidly and to a lower final error than the baseline. However, DAgger substantially outperforms the least-squares policy. 
 
-Both the least squares and DAgger converge in just the first few iterations when training on the \textit{pent3ene} dataset. Testing this on the other half of \textit{pent3ene} dataset shows the exact same result and DAgger does not perform better than least squares in each individual case. However, DAgger provides a set of coefficients which lead to convergence within a few steps both for $\rho_0 = 0$ and $\rho_0 = I$.
+CURRENT POSITION OF DY EDITS
+
+Both the least squares and DAgger converge in just the first few iterations when training on the \textit{pent3ene} dataset. Testing this on the other half of \textit{pent3ene} dataset shows similar results and DAgger does not perform better than least squares in each individual case. However, DAgger provides a set of coefficients which lead to convergence within a few steps both for $\rho_0 = 0$ and $\rho_0 = I$.
 
 \begin{figure}[h!]
 \centering
