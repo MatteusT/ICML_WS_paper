@@ -54,19 +54,17 @@
 
 
 \begin{abstract}
-A means to accelerate iterative processes by using imitation learning is provided. This work focuses on the application of quantum mechanics and solving Hartree-Fock, which is a method for approximating the electron distribution and energy of a given molecular system. Hartree-Fock is excessively time-consuming or even infeasible when applied to large molecules. Besides, depending on input, it is not always guaranteed to converge to a solution. Speeding up Hartree-Fock and making it more robust would thus enable scientists to deal with more complicated molecules and study chemical reactions with larger systems. In the present work, we attempt to improve on Hartree-Fock by imitation learning: from the trajectory produced by the original Hartree-Fock, we extract an (expensive to evaluate) expert policy which converges to a solution quickly and reliably, and attempt to imitate this policy with a less-expensive policy class.  To solve the imitation learning problem, we apply the Dataset Aggregation algorithm (DAgger), which learns a policy that is guaranteed to perform well under its induced distribution of states. In the experiment, we show that after 
-%applying one iteration of DAgger, we got a faster convergence. 
- multiple iterations of DAgger, the performance improves and becomes less over-fit. 
+A means to accelerate fixed-point iterative processes by using imitation learning is explored. The mapping to imitation learning is quite general, in that it requires only a sequence of iterates from an existing fixed-point algorithm. Expert demonstrations with enhanced convergence are then constructed that take larger steps through this sequence. In the current studies, the convergence rate is doubled by eliminated the odd-numbered iterates. A policy that mimics this enhanced expert performance is then trained using the Dataset Aggregation algorithm (DAgger), which learns a policy that is guaranteed to perform well under its induced distribution of states. The studies are carried out using the Hartree-Fock fixed-point algorithm of quantum chemistry, which is a mean-field theory of the electronic structure and energy of a molecular system. The results indicate that policies trained on a set of molecules transfer successfully to other molecules of the same general class. The DAgger algorithm leads to more robust transfer than alternative methods that do include training on the distribution of states induced by the learned policies.
 \end{abstract}
 
 \section{INTRODUCTION}
 
-% Geoff: Is phrasing "enhanced expert demonstration" good?
+% Geoff: Is phrasing "enhanced expert demonstration" ok?
 Many computational methods in science and engineering use fixed-point iteration
 \[
 x_{n+1} = f(x_n), \quad n = 0,1,2,3...
 \]
-to attempt to find fixed points of $f$, i.e. points at which $f(x)=x$. The iterations generate a sequence, $x_0, x_1, x_2, \ldots$, that ideally converge to a fixed point, $x$. This paper explores the application of imitation learning to fixed-point iteration to accelerate convergence and improve stability. Imitation learning, also called learning from demonstration, is designed to learn a policy that imitates an expert's demonstration so as to become capable of performing the task demonstrated by the expert. For many important problems in science and engineering, considerable effort have gone into developing and fine-tuning fixed-point iteration algorithms. The sequences generated from these existing algorithms, $x_0, x_1, x_2$  provide a basis for creating expert demonstrations with enhanced performance. For example, the series $x_0, x_2, x_4$ provides an enhanced expert demonstration with accelerated convergence. The use of imitation learning to discover policies that mimic the behavior of such enhanced experts has the potential to substantially improve algorithms that are at the core of much of computational science.
+to attempt to find fixed points of $f$, i.e. points at which $f(x)=x$. The iterations generate a sequence, $x_0, x_1, x_2, \ldots$, that ideally converge to a fixed point, $x$, at which $f(x)=x$. This paper explores the application of imitation learning to fixed-point iteration to accelerate convergence and improve stability. Imitation learning, also called learning from demonstration, is designed to learn a policy that imitates an expert's demonstration so as to become capable of performing the task demonstrated by the expert. For many important problems in science and engineering, considerable effort have gone into developing and fine-tuning fixed-point iteration algorithms. The sequences generated from these existing algorithms, $x_0, x_1, x_2$  provide a basis for creating expert demonstrations with enhanced performance. For example, the series $x_0, x_2, x_4$ provides an enhanced expert demonstration with accelerated convergence. The use of imitation learning to discover policies that mimic the behavior of such enhanced experts has the potential to substantially improve algorithms that are at the core of much of computational science.
 
 In the field of computational quantum chemistry, the Hartree-Fock method is a fixed-point algorithm that is used to approximate the electronic structure and energy of molecules. Hartree-Fock is a specific instance of a broader class of mean-field theory approaches to many-body problems. In such mean-field theories, the effect of all individuals on any given individual is approximated by a single averaged effect, thus reducing a many-body problem to a one-body problem. In quantum chemistry, the mean field arises from the averaged charge distribution of the electrons, as described by the electron density, $\rho({\bf r})$. The Hartree-Fock iterations thereby generate a series of electron densities that ideally converge to a fixed point. Quantum chemical methods that go beyond mean-field theory typically begin with the results of a Hartree-Fock calculation, making the Hartree-Fock algorithm a pervasive component of quantum chemistry.\cite{Some authoritative review of electronic-structure theory}
 
@@ -238,10 +236,9 @@ R^{(i)}_j =  w [(\sum \|\hat{c}^{(i)}_j\| - 1]
 where the weight $w$ was empirically adjusted to a value of 30. 
 
 %TODO: Is it single iteration DAgger? Ok to rename as no-induced-states
-An expert demonstration that is optimal for the training data is then constructed as follows. We first train a policy that takes the initial density matrix to the final density matrix $(\rho_0) \rightarrow \rho_n$, and use this generate $\rho_1$. A policy is then trained on $(\rho_0, \rho_1) \rightarrow \rho_n$ and used to generate $\rho_2$. This approach is essentially single-iteration DAgger targetting $\rho_n$ and will be referred to as the ``no induced states'' policy. Every instance in the training data converges in less than 12 iterations, which is considerably faster than DIIS\cite{Pulay1980} and so provides a high-quality expert demonstration. Enhanced expert demonstrations are then created by eliminating the odd numbered iterations and DAgger is used to train a policy that mimics this enhanced demonstration, as in Section~\ref{sec:policy}. 
+An expert demonstration that is optimal for the training data is then constructed as follows. We first train a policy that takes the initial density matrix to the final density matrix $(\rho_0) \rightarrow \rho_n$, and use this generate $\rho_1$. A policy is then trained on $(\rho_0, \rho_1) \rightarrow \rho_n$ and used to generate $\rho_2$. This approach is essentially single-iteration DAgger targetting $\rho_n$ and will be referred to as the ``no induced states'' policy. Every instance in the training data converges in less than 12 iterations, which is considerably faster than DIIS\cite{Pulay1980} and so provides a high-quality expert demonstration. Enhanced expert demonstrations are then created by eliminating the odd numbered iterations and DAgger is used to train a policy that mimics this enhanced demonstration, as in Section~\ref{sec:policy}. To further expand the training data, expert demonstrations are constructed starting from two different initial density matrices, $\rho_0$ of Algorithm~\ref{alg:hf} equal to 0 and to the identity matrix, ${\bf I}$. This leads to two different expert demonstrations for each molecular instance that sample substantially different states in the initial trajectories. 
 
-To further expand the training data, expert demonstrations are constructed starting from two different initial density matrices, $\rho_0$ of Algorithm~\ref{alg:hf} equal to 0 and to the identity matrix. This leads to two different expert demonstrations for each molecular instance that sample substantially different states in the initial trajectories. 
-As a ``baseline'' policy for comparison, we use the simple, but still utilized, policy in which the density matrix for iteration $i$ is the average of the density matrices from the past two iterations.
+As a ``baseline'' policy for comparison, we use the simple policy in which the density matrix for iteration $i$ is the average of the density matrices from the past two iterations.
 
 \section{RESULTS}
 
@@ -264,11 +261,8 @@ As a ``baseline'' policy for comparison, we use the simple, but still utilized, 
 \label{fig:testcycloPen}
 \end{figure}
 
-The performance of the policies discussed above on the training and test data are shown in Figures XX. Both the least squares and DAgger policies converge more rapidly and to a lower final error than the baseline. However, DAgger substantially outperforms the least-squares policy. 
 
-CURRENT POSITION OF DY EDITS
-
-Both the least squares and DAgger converge in just the first few iterations when training on the \textit{pent3ene} dataset. Testing this on the other half of \textit{pent3ene} dataset shows similar results and DAgger does not perform better than least squares in each individual case. However, DAgger provides a set of coefficients which lead to convergence within a few steps both for $\rho_0 = 0$ and $\rho_0 = I$.
+Both the no-induced-states and DAgger policies converge in the first few iterations on the \textit{pent3ene} training dataset (data not shown) and, on the test data, converge more rapidly and to lower final error than the baseline policy (Figure XX). However, DAgger leads to more robust behavior, including rapid convergence from both the  $\rho_0 = 0$ and $\rho_0 = I$ starting points.
 
 \begin{figure}[h!]
 \centering
@@ -288,13 +282,10 @@ Both the least squares and DAgger converge in just the first few iterations when
 \label{fig:testpropSub}
 \end{figure}
 
-Evaluating the robustness of these policies by testing on datasets consisting of a different class of molecules are shown in Figure~\ref{fig:testcycloPen} and \ref{fig:testpropSub}. Least squares does not perform as good as DAgger in these cases, this could be due to tendency to over-fit. DAgger provides also a more robust set of coefficients given that it is trained on two different initial guess density matrices ($\rho_0 = 0$ and $\rho_0 = I$).
-
-
 
 \section{CONCLUSION}
-In the experiment, we first proposed the least squares policy. It is easy to train and already can yield much lower error comparing to the baseline. However, it tend to somewhat over-fit the training data and performance fluctuates on testing data accordingly. On the other hand, DAgger does train a more robust policy which is more flexible with input initial guess. DAgger outperforms least squares when tested on different datasets.  
-During the training process in DAgger, it keeps aggregating the dataset hence has a more diverse training instances. This can prevent the policy from over-fitting the training dataset thus produces a more stable and smooth decreasing trend. This provides a great property when dealing with large molecules or on the case which is hard to get to convergence.
+
+The work explores a new application of imitation learning, that of accelerating the fixed-point iteration processes that are common in science and engineering. The mapping to imitation learning is quite general, in that it requires only a sequence of iterates from existing fixed-point algorithm. Expert demonstrations with enhanced convergence are then constructed that take larger steps through this sequence. The specific case considered here, the Hartree-Fock algorithm of quantum chemistry, allowed us to test the ability of policies trained on one situation to transfer to different situations. Here, good transfer is found between different chemical systems. The results also indicate that the DAgger algorithm, which expands the training data to include states induced by the learned policies, leads to policies with better transfer between systems.  
 
 \bibliography{refs}
 
