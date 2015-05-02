@@ -36,7 +36,7 @@
 
 \begin{document}
 
-\title{Imitation Learning for Accelerating Fixed Point Iterative Processes}
+\title{Imitation Learning for Accelerating Iterative Computation of Fixed Points}
 %title{Speeding up Hartree-Fock by Imitation Learning}
 
 \author{\name Name\ Name \email email \\
@@ -52,33 +52,50 @@
 
 \maketitle
 
+% todo:
+% talk about differentiating through HF to get gradients?
+% do we ever use parameterized HF in this work?  (e.g., scale some of the integrals)
 
-\begin{abstract}
-A means to accelerate fixed-point iterative processes by using imitation learning is explored. The mapping to imitation learning is quite general, in that it requires only a sequence of iterates from an existing fixed-point algorithm. Expert demonstrations with enhanced convergence are then constructed that take larger steps through this sequence. In the current studies, the convergence rate is doubled by eliminated the odd-numbered iterates. A policy that mimics this enhanced expert performance is then trained using the Dataset Aggregation algorithm (DAgger), which learns a policy that is guaranteed to perform well under its induced distribution of states. The studies are carried out using the Hartree-Fock fixed-point algorithm of quantum chemistry, which is a mean-field theory of the electronic structure and energy of a molecular system. The results indicate that policies trained on a set of molecules transfer successfully to other molecules of the same general class. The DAgger algorithm leads to more robust transfer than alternative methods that do include training on the distribution of states induced by the learned policies.
+\begin{abstract}%
+Many computational methods in science and engineering work by fixed-point iteration---repeatedly applying a given update function until convergence.  Unfortunately, this sort of iterative computation can be expensive: the update function itself may be costly to compute, and we may need many updates before we reach the desired fixed point.  So, we explore a means to accelerate fixed-point iteration via imitation learning.  Our approach is simple and appealing, and needs only black-box access to the original update function.  We show in experiments that our approach successfully accelerates a central algorithm from quantum chemistry: the Hartree-Fock method for calculating the electronic structure and energy of a molecular system.  Our results indicate that policies trained on one set of molecules transfer successfully to other molecules of the same general class.  They also indicate that imitation learning leads to more-robust transfer compared to alternative methods that do not take into account the distribution of states induced by our learned policies.
+%
+% We use this access to construct expert demonstrations that take larger steps through the sequence of iterates. In the current studies, the convergence rate is doubled by eliminating odd-numbered iterates. A policy that mimics this enhanced expert performance is then trained using the Dataset Aggregation algorithm (DAgger), which learns a policy that is guaranteed to perform well under its induced distribution of states. The studies are carried out using the Hartree-Fock fixed-point algorithm of quantum chemistry, which is a mean-field theory of the electronic structure and energy of a molecular system. The results indicate that policies trained on a set of molecules transfer successfully to other molecules of the same general class. The DAgger algorithm leads to more robust transfer than alternative methods that do include training on the distribution of states induced by the learned policies.
 \end{abstract}
 
 \section{INTRODUCTION}
+
+% at some point we should probably compare: just swap in a deep net instead of using HF update calculation at all
 
 % Geoff: Is phrasing "enhanced expert demonstration" ok?
 Many computational methods in science and engineering use fixed-point iteration
 \[
 x_{n+1} = f(x_n), \quad n = 0,1,2,3...
 \]
-to attempt to find fixed points of $f$, i.e. points at which $f(x)=x$. The iterations generate a sequence, $x_0, x_1, x_2, \ldots$, that ideally converge to a fixed point, $x$, at which $f(x)=x$. This paper explores the application of imitation learning to fixed-point iteration to accelerate convergence and improve stability. Imitation learning, also called learning from demonstration, is designed to learn a policy that imitates an expert's demonstration so as to become capable of performing the task demonstrated by the expert. For many important problems in science and engineering, considerable effort have gone into developing and fine-tuning fixed-point iteration algorithms. The sequences generated from these existing algorithms, $x_0, x_1, x_2$  provide a basis for creating expert demonstrations with enhanced performance. For example, the series $x_0, x_2, x_4$ provides an enhanced expert demonstration with accelerated convergence. The use of imitation learning to discover policies that mimic the behavior of such enhanced experts has the potential to substantially improve algorithms that are at the core of much of computational science.
+to attempt to find fixed points of $f$, i.e., points at which $f(x)=x$. These methods generate a sequence of iterates, $x_0, x_1, x_2, \ldots$, that ideally converge to a fixed point $x$. This paper explores the application of imitation learning to fixed-point iteration to accelerate convergence and improve stability. Imitation learning, also called learning from demonstration, is designed to learn a policy that imitates an expert's method of performing a target task: we gather training data by posing task instances to the expert, and train a function approximator to mimic the expert's mapping from situations to actions.
 
-In the field of computational quantum chemistry, the Hartree-Fock method is a fixed-point algorithm that is used to approximate the electronic structure and energy of molecules. Hartree-Fock is a specific instance of a broader class of mean-field theory approaches to many-body problems. In such mean-field theories, the effect of all individuals on any given individual is approximated by a single averaged effect, thus reducing a many-body problem to a one-body problem. In quantum chemistry, the mean field arises from the averaged charge distribution of the electrons, as described by the electron density, $\rho({\bf r})$. The Hartree-Fock iterations thereby generate a series of electron densities that ideally converge to a fixed point. Quantum chemical methods that go beyond mean-field theory typically begin with the results of a Hartree-Fock calculation, making the Hartree-Fock algorithm a pervasive component of quantum chemistry.\cite{Some authoritative review of electronic-structure theory}
+The most straightforward way to apply imitation learning to fixed-point calculations would be to treat our original update function as the expert: we would train a cheaper function approximator to imitate the original, more expensive update function, and hopefully gain the ability to perform each iteration of our algorithm faster without significant loss of accuracy in the final fixed point.  
+%
+However, scientific and engineering applications often have two important differences from typical applications of imitation learning, making the straightforward approach problematic.  First, to achieve a useful speedup, we do not need to completely eliminate calls to the original update function; it is enough to reduce their frequency.  Second, considerable effort has often gone into developing and fine-tuning the ``expert'' fixed-point update functions; simply replacing the expert update function with a naive function approximator would throw away much of this effort.  In particular, the expert update function often encodes physical constraints and intuitions that would be difficult to enforce with a naive function approximator; dropping these constraints and intuitions would lead to solutions that are not acceptable to domain experts, even if we were able to maintain or improve overall approximation error.
+
+%% GJG position marker
+
+% we train our imitation learner to skip some of the steps from the original sequence of iterates.  
+
+For many important problems in science and engineering, considerable effort has gone into developing and fine-tuning fixed-point iteration algorithms. The sequences generated from these existing algorithms, $x_0, x_1, x_2, \ldots$  provide a basis for creating expert demonstrations with enhanced performance. For example, the series $x_0, x_2, x_4, \ldots$ provides an enhanced expert demonstration with accelerated convergence. The use of imitation learning to discover policies that mimic the behavior of such enhanced experts has the potential to substantially improve algorithms that are at the core of much of computational science.
+
+In the field of computational quantum chemistry, the Hartree-Fock method is a fixed-point algorithm that is used to approximate the electronic structure and energy of molecules. Hartree-Fock is a specific instance of a broader class of mean-field-theory approaches to many-body problems. In such mean-field theories, the effect of all individuals on any given individual is approximated by a single averaged effect, thus reducing a many-body problem to a one-body problem. In quantum chemistry, the mean field arises from the averaged charge distribution of all electrons, as described by the electron density, $\rho({\bf r})$. The Hartree-Fock iterations thereby generate a sequence of electron densities that ideally converge to a fixed point. Quantum chemical methods that go beyond mean-field theory typically begin with the results of a Hartree-Fock calculation, making the Hartree-Fock algorithm a pervasive component of quantum chemistry.\cite{Some authoritative review of electronic structure theory}
 
 Here, well-established Hartree-Fock algorithms are used to generate series of electron densities from which enhanced expert demonstrations are constructed. We then apply supervised learning to train a policy that mimics the demonstration. However, naive supervised learning may yield poor performance in practice and also in theory.  Because the learner's prediction and action affect future observations and states during the execution of the learned policy, it obviously violates the common i.i.d. assumption made in most statistical learning approaches \citep{Ross}. Fortunately, the dataset aggregation algorithm (DAgger), proposed by Ross et al. \citep{DAgger}, can learn a stationary deterministic policy guaranteed to perform well under its induced distribution of states. This in turn serves as a remedy to the poor performance in naive supervised learning. DAgger also has been shown to have stable performance and fast learning rate \citep{DAggerCompare}. Below, DAgger is shown to yield policies whose performance is superior to those obtained from more naive approaches. 
 
 \section{BACKGROUND}
 
 \subsection{Hartree-Fock}
-
+%GEOFF: Any suggestions on what to cut here?
 The core problem of quantum chemistry is to compute the electronic distribution, given the position of the nuclei. In Hartree-Fock theory, the distribution is described by the electron density, $\rho({\bf r})$, which gives the probability of finding any electron at the position ${\bf r}$. Hartree-Fock theory derives from the time-independent Schr\"{o}dinger equation,
 \begin{equation} \label{eq:schrodinger}
 				\hat{H}\Psi = E\Psi
 \end{equation}
-where $\hat{H}$ is the Hamiltonian operator and the many-body, or many-electron, wave-function $\Psi$ is an eigenfunction of that operator. Different $\Psi$'s correspond to different quantum states of the system, but the goal of Hartree-Fock theory is to approximate the lowest-energy state. [expand?]  Hartree-Fock theory uses a mean-field approach to convert the many-body Schr\"{o}dinger equation to a one-electron problem,
+where $\hat{H}$ is the Hamiltonian operator and the many-body, or many-electron, wave-function $\Psi$ is an eigenfunction of that operator. Different $\Psi$'s correspond to different quantum states of the system, but the goal of Hartree-Fock theory is to approximate the lowest-energy state. Hartree-Fock theory uses a mean-field approach to convert the many-body Schr\"{o}dinger equation to a one-electron problem,
 \begin{equation} \label{eq:fockSchrodinger}
 				\hat{F}\phi_a({\bf r}) = \epsilon_a \phi_a({\bf r})
 \end{equation}
@@ -92,11 +109,11 @@ For computational expediency, the molecular orbitals, $\chi_a$ of Eq.~\ref{eq:fo
 \begin{equation}\label{eq:lcao}
 \phi_a({\bf r}) = \sum_{i=1}^{N_{basis}} \chi_i({\bf r}) C_{i,a}
 \end{equation}
-The set of basis functions provides a finite-dimensional Hilbert space in which to obtain approximate solutions. In this space, the operators $\hat{F}$, $\hat{h}_1$ and $\hat{G}$, along with the density $\rho({\bf r})$ become symmetric matrices of dimension $N_{basis}$ and Eq.~\ref{eq:fockSchrodinger} becomes a generalised matrix eigenvalue problem,
+The set of basis functions, $\chi_i$, provides a finite-dimensional Hilbert space in which to obtain approximate solutions. In this space, the operators $\hat{F}$, $\hat{h}_1$ and $\hat{G}$, along with the density $\rho({\bf r})$ become symmetric matrices of dimension $N_{basis}$ and Eq.~\ref{eq:fockSchrodinger} becomes a generalised matrix eigenvalue problem,
 \begin{equation}\label{eq:fockMatrix}
 F(\rho)C = SC\epsilon
 \end{equation}
-where $F$ is the Fock matrix and $S$ is the overlap matrix of inner products of the basis functions. $\rho$ is the density matrix which expresses the electron density $\rho(({\bf r})$ in the basis set and is given by $C^TC$. Hartree-Fock scales nominally as $N_{basis}^4$ due to the evaluation of $\hat{G}$, although scalings closer to $N_{basis}^3$ are routinely achieved by taking advantage of sparsity in construction of $\hat{G}$\ref{?}.
+where $F$ is the Fock matrix and $S$ is the inner products of the basis functions. $\rho$ is the density matrix which expresses the electron density $\rho(({\bf r})$ in the basis set and is given by $C^TC$. Hartree-Fock scales nominally as $N_{basis}^4$ due to the evaluation of $\hat{G}$, although scalings closer to $N_{basis}^3$ are routinely achieved by taking advantage of sparsity in construction of $\hat{G}$\ref{?}.
 
 
 \begin{algorithm}[htb]
@@ -117,8 +134,9 @@ where $F$ is the Fock matrix and $S$ is the overlap matrix of inner products of 
 \label{alg:hf}
 \end{algorithm}
 
-The corresponding fixed point iteration is shown in Algorithm\ref{alg:hf}. Implementations differ with regards to the means used to construct the starting density matrix and, more importantly for the current study, with regards to the means used to construct a guess density matrix from past iterates, $\rho_i$. This is typically done by taking a linear combination of these past iterates. In the Direct Inversion in the Iterative Subspace (DIIS) method\citep{Pulay1980}, the linear coefficients are chosen by associating an error vector which each iterate and choosing coefficients that minimize the summed error. Various methods have been used to define the error vector and to find the linear combinations that minimize the predicted error.~\citep{ADIIS,compScuseria,Alejandro2012} However, how to generate linear combinations that lead to the fastest convergence remains an open question\citep{Konstantin2002, Thorsten2011}. The current work retains the approach of using a linear combination of past iterates, but uses supervised learning to discover the optimal coefficients. 
+The corresponding fixed point iteration is shown in Algorithm\ref{alg:hf}. Implementations differ with regards to the means used to construct the starting density matrix and, more importantly for the current study, with regards to the means used to construct a guess density matrix in the first line of the while loop. This is typically done by taking a linear combination of these past iterates. In the Direct Inversion in the Iterative Subspace (DIIS) method\citep{Pulay1980}, the linear coefficients are chosen by associating an error vector which each iterate and choosing coefficients that minimize the summed error. Various methods have been used to define the error vector and to find the linear combinations that minimize the predicted error.~\citep{ADIIS,compScuseria,Alejandro2012} However, how to generate linear combinations that lead to the fastest convergence remains an open question\citep{Konstantin2002, Thorsten2011}. The current work retains the approach of using a linear combination of past iterates, but uses supervised learning to discover the optimal coefficients. 
 
+%GEOFF: Moved this section to right before the full description of the method. Is that ok?
 %\subsection{Accelerating Hartree-Fock convergence as an imitation learning problem}
 
 %The $n$ iterations of the Hartree-Fock process may be viewed as a sequence, beginning with the initial density matrix $\rho_0$, moving through $n-1$ intermediate density matrices $\rho_1$,  $\rho_2$,  $\ldots$ ,$\rho_{n-1}$ and finally ending at the steady-state converged output $\rho_{n}$. The only object that is needed is the final steady-state density matrix. If we can get this final density matrices with fewer iterations, the computation time would be shortened. An expert demonstration with twice the original convergence rate can be constructed, for example, by taking a step size of 2 over the original trajectory: $\rho_0 \rightarrow \rho_2 \rightarrow  \rho_4 \rightarrow  \ldots \rightarrow  \rho_{n}$. We can also construction greedier trajectories by taking larger step sizes or by moving directly to the steady-state density matrix from any starting point ($\rho_0 \rightarrow \rho_{n}$). 
@@ -126,6 +144,7 @@ The corresponding fixed point iteration is shown in Algorithm\ref{alg:hf}. Imple
 %The connection to imitation learning is through the attempt to learn policies that map from any input density matrix to the next density matrix of one of these accelerated sequences. Below, these policies are invoked in the first line of the while loop in Algorithm~\ref{alg:hf}, where the density matrix to be used to compute the Fock matrix is constructed from the density matrices obtained from past iterations. 
 
 \subsection{DAgger algorithm}
+%GEOFF: We substantially re-wrote this section. Please check to make sure we got it correct.
 DAgger is an algorithm that learns from an expert demonstration in an iterative manner. In each iteration, a model is trained under the states that were induced by both the expert and the previous learned models. This aggregation expands the training to include inputs that the model is likely to encounter based on previous training iterations. By doing so, it is possible to offset the error made by previous learned models and thus learn a new policy that better approaches the demonstration. This is a remedy to the problem, in naive supervised learning, that the error may grow quadratically and results may become unpredictable because the policy is trained under a different state distribution than the model may encounter. 
 
 The DAgger algorithm is given as Algorithm \ref{alg:DAgger}. $\Pi$ is the class of policies the learner is considering. In the first iteration, it uses the expert's policy $\pi^*$ to gather a dataset of trajectories $D$ and train a policy $\hat{\pi}_2$ that best mimics the expert on those trajectories. 
@@ -139,6 +158,7 @@ Then in iteration $i$, we sample states according to a mixture of policies ($\ha
  Initialized $D \leftarrow \emptyset$ \\
  Initialized $\hat{\pi}_1$ to any policy in $\Pi$ \\
  \For{j=1 to N }{
+    %GEOFF: Assume beta is a sampling probability. Does this need to be defined the main text?
 	Let $\pi_i$ = $\beta_{j}\pi^* + (1-\beta_{j})\hat{\pi_j}$ \\
 	Sample T-step trajectories using $\pi_j$ \\
 	Get dataset $D_j$ = \{(s, $\pi^*$(s))\} of visited states by $\pi_j$ and actions given by expert. \\
@@ -175,27 +195,29 @@ Then in iteration $i$, we sample states according to a mixture of policies ($\ha
 	\end{table*}
 \end{center} 
 
-The $n$ iterations of the Hartree-Fock process may be viewed as a sequence, beginning with the initial density matrix $\rho_0$, moving through $n-1$ intermediate density matrices $\rho_1$,  $\rho_2$,  $\ldots$ ,$\rho_{n-1}$ and finally ending at the steady-state converged output $\rho_{n}$. The only object that is needed is the final steady-state density matrix. If we can get this final density matrices with fewer iterations, the computation time would be shortened. An expert demonstration with an enhanced convergence rate can be constructed by, for example, taking a step size of 2 over the original trajectory: $\rho_0 \rightarrow \rho_2 \rightarrow  \rho_4 \rightarrow  \ldots \rightarrow  \rho_{n}$. We can also construct greedier trajectories by taking larger step sizes or by moving directly to the steady-state density matrix from any starting point ($\rho_0 \rightarrow \rho_{n}$). 
+The $n$ iterations of the Hartree-Fock process may be viewed as a sequence, beginning with the initial density matrix $\rho_0$, moving through $n-1$ intermediate density matrices $\rho_1$,  $\rho_2$,  $\ldots$ ,$\rho_{n-1}$ and finally ending at the steady-state converged output $\rho_{n}$. The only object that is needed is the final steady-state density matrix and obtaining this in fewer iterations would lower computation time. An expert demonstration with an enhanced convergence rate can be constructed by, for example, taking a step size of 2 over the original trajectory: $\rho_0 \rightarrow \rho_2 \rightarrow  \rho_4 \rightarrow  \ldots \rightarrow  \rho_{n}$. We can also construct greedier trajectories by taking larger step sizes or by moving directly to the steady-state density matrix from any starting point ($\rho_0 \rightarrow \rho_{n}$). 
 
+%GEOFF: Original notation used two subscripts on c. Changes this to super for DAgger iteration and sub for HF interation, since I could never remember which came first. Is this notation ok?
 Accelerating Hartree-Fock can be cast as an imitation learning problem by attempting to learn policies that mimic experts with accelerated convergence, such as that with a step size of two over the original sequence of density matrices. These policies are invoked in the first line of the while loop in Algorithm~\ref{alg:hf}, where the density matrix to be used to compute the Fock matrix is constructed from the density matrices obtained from past iterations. Below, we consider policies where the new density matrix is written as a linear combination of past density matrices. The set of linear coefficients used to generate the guess density for the $i^{th}$ iteration of Hartree-Fock will be referred to as $\hat{c}_i$.
 
-% What is the correct notation for the entire set of all $\hat{c}_i$
+%GEOFF: What is the correct notation for the entire set of all $\hat{c}_i$, since I think this entire set is the actual policy?
 Referring to the DAgger algorithm, in our case, $\Pi$ is the policy class consisting of all modified Hartree-Fock methods, Algorithm~\ref{alg:hf}, in which a set of linear coefficients $\hat{c}_i$ is used to construct the input guess density matrix from past density matrices. $\pi^*$ represents the expert's policy that generates a sequence of density matrices with enhanced convergence. For the remainder of this paper, we consider the sequence $\rho_0 \rightarrow \rho_2 \rightarrow  \rho_4 \rightarrow  \ldots \rightarrow  \rho_{n}$. 
 
 
 The main idea of DAgger is to train the policy under the induced state of the previous policies. Therefore, refer to the Algorithm~\ref{alg:DAgger}, when training policy $\hat{\pi}_{j+1}$ in DAgger iteration $j$, we will consider states generated from the previous policy $\hat{\pi}_{j}$ and all earlier policies. For convenience, we introduce the notation $(\rho_a, \rho_b, ....) \rightarrow \rho_c $ to represent the outcome of a single Hartree-Fock iteration, in which a linear combination of the density matrices $\rho_a, \rho_b, ....$ is used by Hartree-Fock to generate the next density matrix $\rho_c$ of the series. 
 
+%GEOFF: The table is the same as original draft, but the discussion is very different. Let us know if it is ok.
 The training process is visualized in Table~\ref{tab:DAgger}, in which Hartree-Fock iterations are shown as columns and Dagger iterations are shown as rows. We begin by training a policy for the first iteration of Hartree-Fock. In this case DAgger has only one iteration, in which a policy is trained on the objective $(\rho_0) \rightarrow \rho_2$. The policy resulting from this training is specified by the linear coefficients $\hat{c}^{[1]}_1$, where the superscript indicates DAgger iteration and the subscript indicates Hartree-Fock iteration. The density matrices generated from this policy are referred to as $\rho_2^{'}$, where the number of primes indicates the DAgger iteration. 
 
-The training process then moves onto the second Hartree-Fock iteration. In the first DAgger iteration, a policy is trained on $(\rho_0, \rho_2) \rightarrow \rho_4$. The resulting policy is specified by the linear coefficients $\hat{c}^{[1]}_2$ and generates induced states, $\rho_4^{'}$. In the second DAgger iteration, we include states induced from the training on the past Hartree-Fock iterations, by expanding the objective to include $(\rho_0, \rho_2^{'}) \rightarrow \rho_4$. The resulting policy is specified by the linear coefficients $\hat{c}^{[2]}_2$ and generates induced states, $\rho_4^{''}$. As this point, this are no additional induced states to include in the training and so the DAgger iteration terminates. 
+The training process then moves onto the second Hartree-Fock iteration. In the first DAgger iteration, a policy is trained on $(\rho_0, \rho_2) \rightarrow \rho_4$. The resulting policy is specified by the linear coefficients $\hat{c}^{[1]}_2$ and generates induced states, $\rho_4^{'}$. In the second DAgger iteration, we include states induced from the training on the past Hartree-Fock iterations by expanding the objective to include $(\rho_0, \rho_2^{'}) \rightarrow \rho_4$. The resulting policy is specified by the linear coefficients $\hat{c}^{[2]}_2$ and generates induced states, $\rho_4^{''}$. As this point, there are no additional induced states to include in the training and so the DAgger iteration terminates. 
 
-This process continues on to the third Hartree-Fock iteration, which involves three DAgger iterations. The first iteration trains on only expert states $(\rho_0, \rho_2, \rho_4) \rightarrow \rho_6$, generating coefficients $\hat{c}^{[1]}_3$ and $\rho_6^{'}$. The second DAgger iteration expands the objective to include sequences in which the final input density matrix includes states induced by previous policies, $(\rho_0, \rho_2, \rho_4^{'}) \rightarrow \rho_6$. The third DAgger iteration adds sequences in which the states induced by the previous policies begin at the penultimate input density matrix,  $(\rho_0, \rho_2^{'}, \rho_{4}^{''}) \rightarrow \rho_6$. In general, each DAgger iteration expands the objective to includes sequences in which the induced states begin one step earlier than the previous DAgger iteration.  
+This process continues on to the third Hartree-Fock iteration, which involves three DAgger iterations. The first iteration trains on only expert states $(\rho_0, \rho_2, \rho_4) \rightarrow \rho_6$, generating coefficients $\hat{c}^{[1]}_3$ and $\rho_6^{'}$. The second DAgger iteration expands the objective to include sequences in which the final input density matrix includes states induced by previous policies, $(\rho_0, \rho_2, \rho_4^{'}) \rightarrow \rho_6$. The third DAgger iteration adds sequences in which the states induced by previous policies begin at the penultimate input density matrix,  $(\rho_0, \rho_2^{'}, \rho_{4}^{''}) \rightarrow \rho_6$. In general, each DAgger iteration expands the objective to includes sequences in which the induced states begin one step earlier than the previous DAgger iteration.  
 
-This process of expanding the objective by aggregating previous sequences of induced states is the key to compensating the error made by the previous iterations. The training leads to policy that is expressed through the set of coefficients $\hat{c}^{[i]}_i$ that specify how to construct the guess density matrix for the $i^{th}$ Hartree-Fock iteration from the previous density matrices. This policy not only mimics the expert's demonstration but also offsets the error made by the previous iterations.
+This process of expanding the objective by aggregating previous sequences of induced states is the key to compensating the error made by the previous iterations. The training leads to a policy that is expressed through the set of coefficients $\hat{c}^{[i]}_i$ that specify how to construct the guess density matrix for the $i^{th}$ Hartree-Fock iteration from the previous density matrices. This policy not only mimics the expert's demonstration but also offsets the error made by the previous iteration.
 
 \section{EXPERIMENTAL DESIGN}
-
-The computational experiments use the approach of Section~\ref{sec:policy} to train a policy for accelerating Hartree-Fock and compare the results to some baseline approaches. Of particular interest is the degree to which a policy trained on one class of molecules can transfer to a different class of molecules. 
+%GEOFF: Is it obvious why the last sentence is of particular interests, or does it need a because...?
+The computational experiments use the approach of Section~\ref{sec:policy} to train a policy for accelerating Hartree-Fock and compare the results to some baseline approaches. Of particular interest is the degree to which a policy trained on one class of molecules can transfer to a different class of molecules.
 
 \begin{figure}[h!]
 \centering
@@ -220,23 +242,25 @@ The computational experiments use the approach of Section~\ref{sec:policy} to tr
 \caption{The chemical structure of molecules in the datasets, R = H, F, OH or NH\textsubscript{2}}
 \label{fig:Molecules}
 \end{figure}
-
-The following three data sets were generated, with the first being used for training and the remaining used for testing. Each data set consists of a set of molecules, as defined by the bonding pattern between the atoms, and a set of distinct molecular geometries of these molecules, as defined by distortions of the structure away from the equilibrium geometry at which the energy of the molecule is minimized. This geometric distortions are generated using a random uniform distribution of $\pm$0.5 \AA\ for bond lengths and $\pm$10\textsuperscript{o} for bond angles.  This approach of uniform sampling generates highly distorted structures. To prevent inclusion of structures that are of little interest in chemical applications, structures are rejected if there are contacts closer that 3\AA\ between non-bonded atoms.  In addition, each molecular configuration is placed in 4 different environments (1 with no environment + 3 different fields for X, Y and Z direction).
+%GEOFF: Too much detail here?
+The following three data sets were generated, with the first being used for training and the remaining used for testing. Each data set consists of a set of molecules, as defined by the bonding pattern between the atoms, and a set of distinct molecular geometries of these molecules, as defined by distortions of the structure away from the equilibrium geometry at which the energy of the molecule is minimized. The geometric distortions are generated using a random uniform distribution of $\pm$0.5 \AA\ for bond lengths and $\pm$10\textsuperscript{o} for bond angles.  This approach of uniform sampling generates highly distorted structures. To prevent inclusion of structures that are of little interest in chemical applications, structures are rejected if there are contacts closer that 3\AA\ between non-bonded atoms.  In addition, each molecular configuration is placed in 4 different environments (1 with no environment + 3 different fields for X, Y and Z direction).
 \begin{description}
-\item[\textit{pent3ene}] 15 unique molecules corresponding to single substition of Pent-3-ene. Single substitution refers to placing a single substituent at one of the positions indicated by R in Figure~\ref{fig:pent3ene}, with all other R's being hydrogen (-H). The substituents are flourine (-F), hydroxyl (-OH) and amine (-NH\textsubscript{2}). The training set includes, for each molecule, the equilibrium geometry and three distorted geometries. The test set includes three distorted geometries for each molecule. Distortions include free rotation about leftmost carbon-carbon single bond of Figure~\ref{fig:pent3ene}. 
+%Matteus: I don't think the pent3ene test set ever gets shown in this paper, so we could perhaps delete it? We could delete it. The test set includes three distorted geometries for each molecule. 
+\item[\textit{pent3ene}] 15 unique molecules corresponding to single substition of Pent-3-ene. Single substitution refers to placing a single substituent at one of the positions indicated by R in Figure~\ref{fig:pent3ene}, with all other R's being hydrogen (-H). The substituents are flourine (-F), hydroxyl (-OH) and amine (-NH\textsubscript{2}). The training set includes, for each molecule, the equilibrium geometry and three distorted geometries. Distortions include free rotation about the leftmost carbon-carbon single bond of Figure~\ref{fig:pent3ene}. 
 \item[\textit{cycloPentene}]Includes cyclo-pentene and its three singly-substituted analogues (Figure~\ref{fig:cycloPen}), each in the equilibrium geometry and 4 distorted geometries. 
-\item[\textit{pentPropylF}] Includes the three singly-substituted species of pent-3-ene-2-propyl-1-Fluorine (Figure~\ref{fig:propSub}), each in its minimum-energy geometry and 7 distorted geometries. Distortions include free rotation about leftmost carbon-carbon single bond of Figure~\ref{fig:propSub}. 
+\item[\textit{pentPropylF}] Includes the three singly-substituted species of pent-3-ene-2-propyl-1-Fluorine (Figure~\ref{fig:propSub}), each in its minimum-energy geometry and 7 distorted geometries. Distortions include free rotation about the leftmost carbon-carbon single bond of Figure~\ref{fig:propSub}. 
 \end{description}
 
 %Geoff: Is R a form of regularization? 
-For each molecular instance, the steady-state density matrix, $\rho_n$, is obtained using a standard fixed-point algorithm\cite{Pulay1980}. The learning objective is then defined as the sum of the distance of the density matrix, $\|\rho_i-\rho_n\|$, and the molecular energy, $|E(\rho_i)-E(\rho_n)|$ in Hartrees, from convergence. Because As in DIIS methods, it is likely desirable to have the coefficients of the linear combination of density matrices sum to one\cite{scusceria} the following is added to the objective,
+For each molecular instance, the steady-state density matrix, $\rho_n$, is obtained using a standard fixed-point algorithm~\cite{Pulay1980}. The learning objective is then defined as the sum of the distance of the density matrix, $\|\rho_i-\rho_n\|$, and the molecular energy, $|E(\rho_i)-E(\rho_n)|$ in Hartrees, from convergence. Because As in DIIS methods, it is likely desirable to have the coefficients of the linear combination of density matrices sum to one\cite{scusceria} the following is added to the objective,
 \begin{equation}
 R^{(i)}_j =  w [(\sum \|\hat{c}^{(i)}_j\| - 1]
 \end{equation}
 where the weight $w$ was empirically adjusted to a value of 30. 
 
-%TODO: Is it single iteration DAgger? Ok to rename as no-induced-states
-An expert demonstration that is optimal for the training data is then constructed as follows. We first train a policy that takes the initial density matrix to the final density matrix $(\rho_0) \rightarrow \rho_n$, and use this generate $\rho_1$. A policy is then trained on $(\rho_0, \rho_1) \rightarrow \rho_n$ and used to generate $\rho_2$. This approach is essentially single-iteration DAgger targetting $\rho_n$ and will be referred to as the ``no induced states'' policy. Every instance in the training data converges in less than 12 iterations, which is considerably faster than DIIS\cite{Pulay1980} and so provides a high-quality expert demonstration. Enhanced expert demonstrations are then created by eliminating the odd numbered iterations and DAgger is used to train a policy that mimics this enhanced demonstration, as in Section~\ref{sec:policy}. To further expand the training data, expert demonstrations are constructed starting from two different initial density matrices, $\rho_0$ of Algorithm~\ref{alg:hf} equal to 0 and to the identity matrix, ${\bf I}$. This leads to two different expert demonstrations for each molecular instance that sample substantially different states in the initial trajectories. 
+%GEOFF and MATTEUS: Is this single iteration DAgger? Original name was least-squares.. ok to change to no-induced-states? We could call it no-induced-states 
+%GEOFF: This is likely to require in-person discussion. Why not just use the sequence from the DIIS algorithm, eliminating every nth instance to create an enhanced expert.
+An expert demonstration that is optimal for the training data is then constructed as follows. We first train a policy that takes the initial density matrix to the final density matrix $(\rho_0) \rightarrow \rho_n$, and use this to generate $\rho_1$. A policy is then trained on $(\rho_0, \rho_1) \rightarrow \rho_n$ and used to generate $\rho_2$, and so on. This approach is essentially single-iteration DAgger, targeting $\rho_n$, and will be referred to as the ``no-induced-states'' policy. Every instance in the training data converges in less than 12 iterations, which is considerably faster than DIIS~\cite{Pulay1980} and so provides a high-quality expert demonstration. Enhanced expert demonstrations are created by eliminating the odd numbered iterations and DAgger is used to train a policy that mimics these enhanced demonstrations, as in Section~\ref{sec:policy}. To further expand the training data, expert demonstrations are constructed starting from two starting points, by setting $\rho_0$ of Algorithm~\ref{alg:hf} to 0 and to the identity matrix, ${\bf I}$. This leads to two different expert demonstrations for each molecular instance that sample substantially different states early in the trajectories. 
 
 As a ``baseline'' policy for comparison, we use the simple policy in which the density matrix for iteration $i$ is the average of the density matrices from the past two iterations.
 
@@ -262,7 +286,7 @@ As a ``baseline'' policy for comparison, we use the simple policy in which the d
 \end{figure}
 
 
-Both the no-induced-states and DAgger policies converge in the first few iterations on the \textit{pent3ene} training dataset (data not shown) and, on the test data, converge more rapidly and to lower final error than the baseline policy (Figure XX). However, DAgger leads to more robust behavior, including rapid convergence from both the  $\rho_0 = 0$ and $\rho_0 = I$ starting points.
+Both the no-induced-states and DAgger policies converge in the first few iterations on the \textit{pent3ene} training dataset (data not shown). On the test data, both polcies converge more rapidly and to lower final error than the baseline policy (Figure \ref{fig:testcycloPen} and \ref{fig:testpropSub}). However, DAgger leads to more robust behavior, including rapid convergence from both the  $\rho_0 = 0$ and $\rho_0 = I$ starting points. These results demonstrate that imitation learning can accelerate fixed-point iteration in a manner that generalized to situations not included in the training.
 
 \begin{figure}[h!]
 \centering
@@ -285,7 +309,7 @@ Both the no-induced-states and DAgger policies converge in the first few iterati
 
 \section{CONCLUSION}
 
-The work explores a new application of imitation learning, that of accelerating the fixed-point iteration processes that are common in science and engineering. The mapping to imitation learning is quite general, in that it requires only a sequence of iterates from existing fixed-point algorithm. Expert demonstrations with enhanced convergence are then constructed that take larger steps through this sequence. The specific case considered here, the Hartree-Fock algorithm of quantum chemistry, allowed us to test the ability of policies trained on one situation to transfer to different situations. Here, good transfer is found between different chemical systems. The results also indicate that the DAgger algorithm, which expands the training data to include states induced by the learned policies, leads to policies with better transfer between systems.  
+The work explores a new application of imitation learning, that of accelerating the fixed-point iteration processes that are common in science and engineering. The mapping to imitation learning is quite general in that it requires only a sequence of iterates from an existing fixed-point algorithm. Expert demonstrations with enhanced convergence are then constructed that take larger steps through this sequence. The specific case considered here, the Hartree-Fock algorithm of quantum chemistry, allowed us to test the ability of policies trained on one situation to transfer to different situations. Here, good transfer is found between different chemical systems. The results also indicate that the DAgger algorithm, which expands the training data to include states induced by previous learned policies, leads to policies that better transfer between systems.  
 
 \bibliography{refs}
 
@@ -294,51 +318,3 @@ The work explores a new application of imitation learning, that of accelerating 
 
 
 
-
-%Figure \ref{fig:testZero} shows the error of each policy on the cycloPentene testing dataset for 12 iterations. The baseline is the policy that always uses the average of the last two density matrices to serve as the input to the next iteration.  
-%
-%We can observe that all the policies seems to converge within 10 iterations except the baseline fluctuates.
-
-
-%The baseline again fluctuates while all the other policies still converges within 12 iteration. 
-%Least squares and DAgger got pretty similar error after 12 iterations.
-%
-%However, the performance of linear combination fluctuates during iteration 5 - 10 while both DAgger with different experts have a more steady decreasing trend across all 12 iterations. 
-
-
-%\begin{figure}[h!]
-%\center
-%  \caption{Absolute value of difference between iterations on training dataset}
-%	\label{fig:converge_training}
-%    \includegraphics[width=210px]{convergence_Training.png}
-%\end{figure}
-%
-%\begin{figure}[h!]
-%\center
-%  \caption{Absolute value of difference between iterations on testing dataset}
-%  \label{fig:converge_testing}
-%    \includegraphics[width=210px]{convergence_Testing.png}
-%\end{figure}
-
-
-%Compare to the result on the training dataset (Figure \ref{fig:training}), the curves are similar for DAgger and baseline, but is pretty different for the least squares. Least squares performs the best and has a smooth result on training dataset while it fluctuates on testing dataset. It is possible because of the least squares over-fit the training dataset. On the contrary, DAgger with the expert that has step size of 2 got more consistent results between training and testing dataset.
-%
-%
-
-%\begin{figure}[h!]
-%\centering
-%\begin{subfigure}{.5\textwidth}
-%  \centering
-%  \includegraphics[scale=0.7]{dE_cycloPen_pzero_test_12iter.pdf}
-%  \caption{$\rho_0 = 0$}
-%  \label{fig:sub1}
-%\end{subfigure}%
-%\begin{subfigure}{.5\textwidth}
-%  \centering
-%  \includegraphics[scale=0.7]{dE_cycloPen_peye_test_12iter.pdf}
-%  \caption{$\rho_0 = I$}
-%  \label{fig:sub2}
-%\end{subfigure}
-%\caption{Error as a function of iteration for test on \textit{cycloPentene} dataset}
-%\label{fig:test}
-%\end{figure}
